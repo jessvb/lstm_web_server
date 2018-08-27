@@ -23,54 +23,41 @@ import {
 
 // UI controls.
 const getText = document.getElementById('get-text');
-// const testText = document.getElementById('test-text');
 let testText = {
   value: ''
 };
 
-let textDataSelect = {
-  value: "drSeuss"
-};
+let modelFileName = 'lstm-text-generation-model_drSeuss.json';
 
-// const lstmLayersSizesInput = document.getElementById('lstm-layer-sizes');
 let lstmLayersSizesInput = {
   value: '128'
 };
 
-// const examplesPerEpochInput = document.getElementById('examples-per-epoch');
 let examplesPerEpochInput = {
   value: '2048'
 };
-// const batchSizeInput = document.getElementById('batch-size');
 let batchSizeInput = {
   value: '128'
 };
-// const epochsInput = document.getElementById('epochs');
 let epochsInput = {
   value: '5'
 };
-// const validationSplitInput = document.getElementById('validation-split');
 let validationSplitInput = {
   value: '0.0625'
 };
-// const learningRateInput = document.getElementById('learning-rate');
 let learningRateInput = {
   value: '1e-2'
 };
 
-// const generateLengthInput = document.getElementById('generate-length');
 let generateLengthInput = {
   value: '200'
 };
-// const temperatureInput = document.getElementById('temperature');
 let temperatureInput = {
   value: '0.75'
 };
-// const seedTextInput = document.getElementById('seed-text');
 let seedTextInput = {
   value: 'This is a seed input. Hopefully it works.'
 };
-// const generatedTextInput = document.getElementById('generated-text');
 let generatedTextInput = {
   value: ''
 };
@@ -82,8 +69,6 @@ let charSet = ["T", "h", "e", " ", "C", "a", "t", "i", "n", "H", "↵", "B", "y"
 ":", "â", "", "", ";", "Z", "(", "9", "8", "3", "/", "4", ")", "“", "’", "…", 
 "”", "‘", "—", "1", "0", "$", " ", "­", ";", "6"]; // dr seuss charset
 
-// const modelAvailableInfo = document.getElementById('model-available');
-
 const sampleLen = 40;
 const sampleStep = 3;
 
@@ -92,7 +77,6 @@ let textGenerator;
 
 function logStatus(message) {
   console.log(message);
-  // appStatus.textContent = message;
 }
 
 /**
@@ -124,23 +108,9 @@ export async function onTextGenerationChar(char) {
 }
 
 export function setUpUI() {
-  // /**
-  //  * Refresh the status of locally saved model (in IndexedDB).
-  //  */
-  // async function refreshLocalModelStatus() {
-  //   const modelInfo = await textGenerator.checkStoredModelStatus();
-  //   if (modelInfo == null) {
-  //     console.log(
-  //       `No locally saved model for "${textGenerator.modelIdentifier()}".`
-  //     );
-  //   } else {
-  //     console.log(`Saved @ ${modelInfo.dateSaved.toISOString()}`);
-  //   }
-  // }
-
   /**
-   * Use `textGenerator` to generate random text, show the characters on the
-   * screen as they are generated one by one.
+   * Use `textGenerator` to generate random text, show the characters in the
+   * console as they are generated one by one.
    */
   async function generateText() {
     try {
@@ -166,8 +136,6 @@ export function setUpUI() {
       let seedSentence;
       let seedSentenceIndices;
       if (seedTextInput.value.length === 0) {
-        // [seedSentence, seedSentenceIndices] = textData.getRandomSlice();
-        // seedTextInput.value = seedSentence;
         logStatus(
           `ERROR: seed sentence length is zero. Seed Sentence: ` +
           seedTextInput.value + '.');
@@ -215,9 +183,8 @@ export function setUpUI() {
    */
 
   getText.addEventListener('click', async () => {
-    // // from loadTextDataButton:
-    // let dataIdentifier = textDataSelect.value; // todo: allow user to change this in Alexa skill (currently set to julesverne)
-    textGenerator = new LoadableLSTMTextGenerator(sampleLen, charSet, textDataSelect.value); //new SaveableLSTMTextGenerator(textData);
+    // from loadTextDataButton:
+    textGenerator = new LoadableLSTMTextGenerator(sampleLen, charSet, modelFileName); // todo: allow user to change the model in Alexa skill
 
     // from createOrLoadModelButton:
     if (textGenerator == null) {
@@ -227,7 +194,7 @@ export function setUpUI() {
 
     // Load locally-saved model.
     logStatus('Loading model... Please wait.');
-    // await textGenerator.loadModel(); // todo uncomment
+    await textGenerator.loadModel(); // todo uncomment
     // updateModelParameterControls(textGenerator.lstmLayerSizes()); // todo uncomment
     logStatus(
       'Done loading model. ' +

@@ -28,7 +28,6 @@
 
 import 'babel-polyfill'; // todo--> added b/c I got ReferenceError: regeneratorRuntime is not defined...
 import * as tf from '@tensorflow/tfjs';
-// import '@tensorflow/tfjs-node';
 
 import {
   onTextGenerationBegin,
@@ -52,11 +51,9 @@ export class LoadableLSTMTextGenerator {
     this.charSet_ = charSet;
     this.charSetSize_ = charSet.length;
     this.sampleLen_ = sampleLen;
-    this.modelIdentifier_ = modelIdentifier; //textData.dataIdentifier();
-    // this.modelType_ = document.getElementById("model-type").value;
-    this.modelType_ = 'LSTM';
-    this.MODEL_LOAD_PATH_PREFIX_ = 'pretrained_models/lstm-text-generation-model';
-    //'downloads://lstm-text-generation-model';//'indexeddb://lstm-text-generation';// TODO
+    this.modelIdentifier_ = modelIdentifier;
+   this.modelType_ = 'LSTM';
+    this.MODEL_LOAD_PATH_PREFIX_ = 'https://s3.amazonaws.com/lstm-model-bucket/pretrained_models';
     this.modelLoadPath_ =
       `${this.MODEL_LOAD_PATH_PREFIX_}/${this.modelIdentifier_}`;
     console.log('MODEL LOAD PATH: ' + this.modelLoadPath_);
@@ -75,25 +72,9 @@ export class LoadableLSTMTextGenerator {
    * Load LSTM model.
    */
   async loadModel() {
-    // const modelsInfo = await tf.io.listModels();
-    // if (this.modelSavePath_ in modelsInfo) {
-    console.log(`Loading existing model...`);
-    // this.model = await tf.loadModel(this.modelLoadPath_);
-    // this.model = await tf.loadModel('file:///pretrained_models/lstm-text-generation-model_drSeuss.json');
-    //this.model = await tf.loadModel(tf.io.browserFiles); TODO!!!!!!!!!!!!!!!!!!!
-    // this.model = await tf.loadModel('http://people.csail.mit.edu/jess/pretrained_lstm_models/lstm-text-generation-model_drSeuss.json');
-    // this.model = await tf.loadModel('file:///C:/Users/jessv/Dropbox (MIT)/Research/Current Research/Repositories and Code/Alexa_LSTM/lstm_browser_console_pretrained/lstm-text-generation/pretrained_models/lstm-text-generation-model_drSeuss.json');
-    
-    // const MODEL_PATH = 'file:///pretrained_models/lstm-text-generation-model_drSeuss.json';
-    // const WEIGHTS_PATH = 'file:///pretrained_models/lstm-text-generation-model_drSeuss.weights.bin';
-    // this.model = await tf.loadFrozenModel(MODEL_PATH, WEIGHTS_PATH);
-
-    // console.log(`Loaded model from ${this.modelLoadPath_}`); // todo del
-    // } else {
-    //   throw new Error(
-    //     `Cannot find model at ${this.modelSavePath_}. ` +
-    //     `Creating model from scratch.`);
-    // }
+    console.log('Loading existing model...');
+    this.model = await tf.loadModel(this.modelLoadPath_);
+    console.log('Loaded model from ' + this.modelLoadPath_);
   }
 
   /**
