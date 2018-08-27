@@ -62,12 +62,13 @@ let generatedTextInput = {
   value: ''
 };
 
-let charSet = ["T", "h", "e", " ", "C", "a", "t", "i", "n", "H", "↵", "B", "y", 
-"D", "r", ".", "S", "u", "s", "d", "o", "I", "w", "p", "l", "A", "c", ",", "W", 
-"\"", "m", "g", "!", "b", "k", "N", "U", "M", "P", "j", "?", "v", "L", "f", "Y", 
-"O", "F", "-", "x", "X", "'", "E", "G", "K", "q", "J", "R", "V", "z", "Q", "", 
-":", "â", "", "", ";", "Z", "(", "9", "8", "3", "/", "4", ")", "“", "’", "…", 
-"”", "‘", "—", "1", "0", "$", " ", "­", ";", "6"]; // dr seuss charset
+let charSet = ["T", "h", "e", " ", "C", "a", "t", "i", "n", "H", "↵", "B", "y",
+  "D", "r", ".", "S", "u", "s", "d", "o", "I", "w", "p", "l", "A", "c", ",", "W",
+  "\"", "m", "g", "!", "b", "k", "N", "U", "M", "P", "j", "?", "v", "L", "f", "Y",
+  "O", "F", "-", "x", "X", "'", "E", "G", "K", "q", "J", "R", "V", "z", "Q", "",
+  ":", "â", "", "", ";", "Z", "(", "9", "8", "3", "/", "4", ")", "“", "’", "…",
+  "”", "‘", "—", "1", "0", "$", " ", "­", ";", "6"
+]; // dr seuss charset
 
 const sampleLen = 40;
 const sampleStep = 3;
@@ -152,14 +153,10 @@ export function setUpUI() {
         seedSentence = seedSentence.slice(
           seedSentence.length - sampleLen, seedSentence.length);
 
-        function textToIndices(text) {
-          const indices = [];
-          for (let i = 0; i < text.length; ++i) {
-            indices.push(this.charSet_.indexOf(text[i]));
-          }
-          return indices;
-        };
-        seedSentenceIndices = textToIndices(seedSentence);
+        seedSentenceIndices = [];
+        for (let i = 0; i < seedSentence.length; ++i) {
+          seedSentenceIndices.push(charSet.indexOf(seedSentence[i]));
+        }
       }
 
       const sentence = await textGenerator.generateText(
@@ -194,12 +191,13 @@ export function setUpUI() {
 
     // Load locally-saved model.
     logStatus('Loading model... Please wait.');
-    await textGenerator.loadModel(); // todo uncomment
-    // updateModelParameterControls(textGenerator.lstmLayerSizes()); // todo uncomment
+    await textGenerator.loadModel();
+    updateModelParameterControls(textGenerator.lstmLayerSizes());
     logStatus(
       'Done loading model. ' +
       'Now you can use it to generate text.');
 
-    // await generateText(); // TODO(JESS): uncomment :)
+    // Generate text and output in console.
+    await generateText();
   });
 }
