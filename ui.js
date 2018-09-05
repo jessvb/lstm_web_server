@@ -23,11 +23,13 @@ import {
 
 // UI controls.
 const getText = document.getElementById('get-text');
-let testText = {
-  value: ''
-};
 
-let modelFileName = 'lstm-text-generation-model_drSeuss.json';
+let selectedText = 'nietzsche';
+
+let modelFileNames = {
+  drSeuss: 'drSeuss.json',
+  nietzsche: 'nietzsche.json'
+};
 
 let lstmLayersSizesInput = {
   value: '128'
@@ -62,13 +64,25 @@ let generatedTextInput = {
   value: ''
 };
 
-let charSet = ["T", "h", "e", " ", "C", "a", "t", "i", "n", "H", "↵", "B", "y",
-  "D", "r", ".", "S", "u", "s", "d", "o", "I", "w", "p", "l", "A", "c", ",", "W",
-  "\"", "m", "g", "!", "b", "k", "N", "U", "M", "P", "j", "?", "v", "L", "f", "Y",
-  "O", "F", "-", "x", "X", "'", "E", "G", "K", "q", "J", "R", "V", "z", "Q", "",
-  ":", "â", "", "", ";", "Z", "(", "9", "8", "3", "/", "4", ")", "“", "’", "…",
-  "”", "‘", "—", "1", "0", "$", " ", "­", ";", "6"
-]; // dr seuss charset
+let charSets = {
+  drSeuss: [
+    'T', 'h', 'e', ' ', 'C', 'a', 't', 'i', 'n', 'H', '↵', 'B', 'y',
+    'D', 'r', '.', 'S', 'u', 's', 'd', 'o', 'I', 'w', 'p', 'l', 'A',
+    'c', ',', 'W', '"', 'm', 'g', '!', 'b', 'k', 'N', 'U', 'M', 'P',
+    'j', '?', 'v', 'L', 'f', 'Y', 'O', 'F', '-', 'x', 'X', '\'', 'E',
+    'G', 'K', 'q', 'J', 'R', 'V', 'z', 'Q', '', ':', 'â', '', '',
+    ';', 'Z', '(', '9', '8', '3', '/', '4', ')', '“', '’', '…', '”',
+    '‘', '—', '1', '0', '$', ' ', '­', ';', '6'
+  ],
+  nietzsche: [
+    'P', 'R', 'E', 'F', 'A', 'C', '↵', 'S', 'U', 'O', 'I', 'N', 'G', ' ',
+    't', 'h', 'a', 'T', 'r', 'u', 'i', 's', 'w', 'o', 'm', 'n', '-', 'e',
+    '?', 'g', 'd', 'f', 'p', 'c', 'l', ',', 'y', 'v', 'b', 'k', ';', '!',
+    '.', 'B', 'z', 'W', 'H', ':', '(', 'j', ')', '"', 'V', 'L', '\'', 'D',
+    'Y', 'K', 'q', 'M', 'x', 'J', '1', '8', '5', '2', '3', '_', '4', '6',
+    '7', '9', '0', 'Q', 'X', '[', ']', 'Z', 'ä', '=', 'æ', 'ë', 'é', 'Æ'
+  ]
+};
 
 const sampleLen = 40;
 const sampleStep = 3;
@@ -155,7 +169,8 @@ export function setUpUI() {
 
         seedSentenceIndices = [];
         for (let i = 0; i < seedSentence.length; ++i) {
-          seedSentenceIndices.push(charSet.indexOf(seedSentence[i]));
+          seedSentenceIndices.push(
+            charSets[selectedText].indexOf(seedSentence[i]));
         }
       }
 
@@ -181,7 +196,9 @@ export function setUpUI() {
 
   getText.addEventListener('click', async () => {
     // from loadTextDataButton:
-    textGenerator = new LoadableLSTMTextGenerator(sampleLen, charSet, modelFileName); // todo: allow user to change the model in Alexa skill
+    textGenerator = new LoadableLSTMTextGenerator(
+      sampleLen, charSets[selectedText],
+      modelFileNames[selectedText]); // todo: allow user to change the model in Alexa skill
 
     // from createOrLoadModelButton:
     if (textGenerator == null) {
