@@ -16,10 +16,16 @@
  */
 
 import * as tf from '@tensorflow/tfjs';
+import '@tensorflow/tfjs-node';
 
 import {
   LoadableLSTMTextGenerator
 } from './index';
+
+// for simple_server:
+const url = import('url');
+const http = import('http');
+const port = 1234;
 
 // UI controls.
 const getText = document.getElementById('get-text');
@@ -93,6 +99,51 @@ let textGenerator;
 function logStatus(message) {
   console.log(message);
 }
+
+/**
+ * Start the server
+ */
+const app = http.createServer((request,response) => {
+	var q, respJSON;
+	q = url.parse(request.url,true).query;
+	if(q.inputText){
+		respJSON = {generated:'todo put gen text here'};
+		console.log('q.inputText: '+q.inputText);
+	} else {
+		respJSON = {generated:'No input text was provided.'};
+	}
+	
+	response.writeHead(200, {'Content-Type': 'application/json','json':'true'});
+	response.write(JSON.stringify(respJSON));
+	response.end();
+});
+
+app.listen(port);
+
+// // todo: put this in the server response
+// // FROM getText.addEventListener('click', async () => {
+// // from loadTextDataButton:
+// textGenerator = new LoadableLSTMTextGenerator(
+//   sampleLen, charSets[selectedText],
+//   modelFileNames[selectedText]); // todo: allow user to change the model in Alexa skill
+
+// // from createOrLoadModelButton:
+// if (textGenerator == null) {
+//   logStatus('ERROR: Please load text data set first.');
+//   return;
+// }
+
+// // Load locally-saved model.
+// logStatus('Loading model... Please wait.');
+// await textGenerator.loadModel();
+// updateModelParameterControls(textGenerator.lstmLayerSizes());
+// logStatus(
+//   'Done loading model. ' +
+//   'Now you can use it to generate text.');
+
+// // Generate text and output in console.
+// await generateText();
+// // });
 
 /**
  * A function to call when text generation begins.
@@ -189,32 +240,4 @@ export function setUpUI() {
   function updateModelParameterControls(lstmLayerSizes) {
     lstmLayersSizesInput.value = lstmLayerSizes;
   }
-
-  /**
-   * Wire up UI callbacks.
-   */
-
-  getText.addEventListener('click', async () => {
-    // from loadTextDataButton:
-    textGenerator = new LoadableLSTMTextGenerator(
-      sampleLen, charSets[selectedText],
-      modelFileNames[selectedText]); // todo: allow user to change the model in Alexa skill
-
-    // from createOrLoadModelButton:
-    if (textGenerator == null) {
-      logStatus('ERROR: Please load text data set first.');
-      return;
-    }
-
-    // Load locally-saved model.
-    logStatus('Loading model... Please wait.');
-    await textGenerator.loadModel();
-    updateModelParameterControls(textGenerator.lstmLayerSizes());
-    logStatus(
-      'Done loading model. ' +
-      'Now you can use it to generate text.');
-
-    // Generate text and output in console.
-    await generateText();
-  });
 }

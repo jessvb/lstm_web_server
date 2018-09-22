@@ -1,29 +1,22 @@
 {
-  "name": "lstm-generate-text-pretrained",
-  "version": "0.1.0",
-  "description": "",
-  "main": "index.js",
-  "license": "Apache-2.0",
-  "private": true,
-  "engines": {
-    "node": ">=8.9.0"
-  },
-  "dependencies": {
-    "@tensorflow/tfjs": "^0.12.0",
-    "cors": "^2.8.4",
-    "express": "^4.16.3"
-  },
+  "name": "lstm_model_loader",
+  "version": "1.0.0",
+  "description": "This project loads an LSTM model (json and weights) and generates text in the console with one button click. This project is based off of this [tensorflowjs example](https://github.com/tensorflow/tfjs-examples/tree/master/lstm-text-generation). To create and download an LSTM model that can be loaded into this project, see",
+  "main": "ui.mjs",
   "scripts": {
-    "watch": "cross-env NODE_ENV=development parcel index.html --no-hmr --open",
-    "build": "cross-env NODE_ENV=production parcel build index.html --no-minify --public-url ./",
-    "postinstall": "yarn upgrade --pattern @tensorflow"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "devDependencies": {
-    "babel-plugin-transform-runtime": "~6.23.0",
-    "babel-polyfill": "~6.26.0",
-    "babel-preset-env": "~1.6.1",
-    "clang-format": "~1.2.2",
-    "cross-env": "^5.1.6",
-    "parcel-bundler": "~1.8.1"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jessvb/lstm_model_loader.git"
+  },
+  "author": "Jessica Van Brummelen",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jessvb/lstm_model_loader/issues"
+  },
+  "homepage": "https://github.com/jessvb/lstm_model_loader#readme",
+  "dependencies": {
+    "@tensorflow/tfjs": "^0.13.0"
   }
 }

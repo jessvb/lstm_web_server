@@ -26,7 +26,9 @@
  * Networks" http://karpathy.github.io/2015/05/21/rnn-effectiveness/
  */
 
-import 'babel-polyfill'; // todo--> added b/c I got ReferenceError: regeneratorRuntime is not defined...
+
+
+// import 'babel-polyfill'; // todo--> added b/c I got ReferenceError: regeneratorRuntime is not defined...
 import * as tf from '@tensorflow/tfjs';
 
 import {
