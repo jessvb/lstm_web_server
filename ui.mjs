@@ -23,12 +23,13 @@ import {
 } from './index';
 
 // for simple_server:
-const url = import('url');
-const http = import('http');
+import url from 'url';
+import http from 'http';
+//const url = url();
+//const http = http();
+//import express from 'express';
+//const app = express();
 const port = 1234;
-
-// UI controls.
-const getText = document.getElementById('get-text');
 
 let selectedText = 'nietzsche';
 
@@ -103,6 +104,7 @@ function logStatus(message) {
 /**
  * Start the server
  */
+//app.get('/', (request,response) => {
 const app = http.createServer((request,response) => {
 	var q, respJSON;
 	q = url.parse(request.url,true).query;
