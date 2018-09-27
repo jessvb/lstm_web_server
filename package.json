@@ -1,27 +1,14 @@
 {
-  "name": "lstm_model_loader",
+  "name": "test_lstm_weights",
   "version": "1.0.0",
-  "description": "This project loads an LSTM model (json and weights) and generates text in the console with one button click. This project is based off of this [tensorflowjs example](https://github.com/tensorflow/tfjs-examples/tree/master/lstm-text-generation). To create and download an LSTM model that can be loaded into this project, see",
-  "main": "ui.mjs",
+  "description": "",
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/jessvb/lstm_model_loader.git"
-  },
-  "author": "Jessica Van Brummelen",
+  "author": "",
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/jessvb/lstm_model_loader/issues"
-  },
-  "homepage": "https://github.com/jessvb/lstm_model_loader#readme",
   "dependencies": {
-    "@tensorflow/tfjs": "^0.13.0",
-    "@tensorflow/tfjs-node": "^0.1.17",
-    "express": "^4.16.3",
-    "http": "0.0.0",
-    "url": "^0.11.0"
-  },
-  "devDependencies": {}
+    "@tensorflow/tfjs-node": "^0.1.17"
+  }
 }
