@@ -1,8 +1,8 @@
 # Load an LSTM and Generate Text
 
-This project loads an LSTM model (json and weights) and generates text in the console with one button click. This project is based off of this [tensorflowjs example](https://github.com/tensorflow/tfjs-examples/tree/master/lstm-text-generation). To create and download an LSTM model that can be loaded into this project, see the [lstm_model_creator](https://github.com/jessvb/lstm_model_creator).
+This project will generate text using a pretrained LSTM network when provided with an input seed via a http request. This project is based off of this [tensorflowjs example](https://github.com/tensorflow/tfjs-examples/tree/master/lstm-text-generation). To create and download an LSTM model that can be loaded into this project, see the [lstm_model_creator](https://github.com/jessvb/lstm_model_creator). The server itself is based off of [simple_server](https://github.com/jessvb/simple_server.git).
 
-Before running this project, install the dependencies (e.g., tfjs, tfjs-node, etc.)<!-- with `yarn` (see package.json)-->. To run to project, use `node --experimental-modules ui.js`.
+Before running this project, install tfjs-node with `npm install @tensorflow/tfjs-node`. To run to project, use `node index.js`.
 
 ## Overview from [Original Source](https://github.com/tensorflow/tfjs-examples)
 
@@ -40,5 +40,5 @@ https://github.com/keras-team/keras/blob/master/examples/lstm_text_generation.py
 ## Usage
 
 ```sh
-yarn && yarn watch
+yarn && node index.js
 ```
