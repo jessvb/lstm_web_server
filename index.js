@@ -199,7 +199,7 @@ async function onTextGenerationChar(charac) {
  * Use `textGenerator` to generate random text, show the characters in the
  * console as they are generated one by one.
 */
-async function generateText(model, charSet, charSetSize, sampleLen) {
+async function generateText(model, charSet, charSetSize, sampleLen, seedTextInput) {
    try {
      if (model == null) {
        console.log('ERROR: Please load text data set first.');
@@ -252,7 +252,7 @@ async function generateText(model, charSet, charSetSize, sampleLen) {
      const currStatus = 'Done generating text.';
      console.log(currStatus);
 	
-	 console.log('sentence in generateText: '+ sentence);
+     console.log('sentence in generateText: '+ sentence);
      return sentence;
    } catch (err) {
      console.log(`ERROR: Failed to generate text: ${err.message}, ${err.stack}`);
@@ -276,9 +276,15 @@ async function setUp() {
 		if(q.inputText){
 			console.log('there is input text!');
 			let generatedText = '';
+			if(q.inputText.length < sampleLen){
+				console.log('inputText is too short. using previous seed.');
+			} else {
+				seedTextInput = q.inputText;
+			}
+			console.log('seed: '+seedTextInput);
 			// Generate text and output in console.
 			try {
-			generatedText = await generateText(model, charSet, charSetSize, sampleLen);
+			generatedText = await generateText(model, charSet, charSetSize, sampleLen, seedTextInput);
 			} catch (err) {
 				console.log(err);
 			}
