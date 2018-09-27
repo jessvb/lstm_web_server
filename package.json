@@ -1,12 +1,12 @@
 {
-  "name": "test_lstm_weights",
+  "name": "lstm_model_loader",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "author": "Jessica Van Brummelen",
   "license": "MIT",
   "dependencies": {
     "@tensorflow/tfjs-node": "^0.1.17"
