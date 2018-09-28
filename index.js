@@ -46,7 +46,7 @@ let batchSizeInput = 128;
 let epochsInput = 5;
 let validationSplitInput = 0.0625;
 let learningRateInput = 1e-2;
-let generateLengthInput = 200;
+let generateLengthInput = 100;
 let temperatureInput = 0.75;
 let seedTextInput = 'This is a seed input. Hopefully it works.';
 let generatedTextInput = '';
@@ -276,19 +276,24 @@ async function setUp() {
 		if(q.inputText){
 			console.log('there is input text!');
 			let generatedText = '';
-			if(q.inputText.length < sampleLen){
-				console.log('inputText is too short. using previous seed.');
+			if(q.inputText == 'test'){
+				console.log('this is a test');
+				generatedText = 'test returned correctly';
 			} else {
+				if (q.inputText.length < sampleLen){
+					console.log('inputText is too short. using previous seed.');
+				} else {
 				seedTextInput = q.inputText;
+				}
+			
+				console.log('seed: '+seedTextInput);
+				// Generate text and output in console.
+				try {
+					generatedText = await generateText(model, charSet, charSetSize, sampleLen, seedTextInput);
+				} catch (err) {
+					console.log(err);
+				}
 			}
-			console.log('seed: '+seedTextInput);
-			// Generate text and output in console.
-			try {
-			generatedText = await generateText(model, charSet, charSetSize, sampleLen, seedTextInput);
-			} catch (err) {
-				console.log(err);
-			}
-
 			respJSON = {generated: generatedText};
 		} else {
 			console.log('no input text.');
