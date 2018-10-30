@@ -9,6 +9,6 @@
   "author": "Jessica Van Brummelen",
   "license": "MIT",
   "dependencies": {
-    "@tensorflow/tfjs-node": "^0.1.17"
+    "@tensorflow/tfjs-node": "^0.1.19"
   }
 }
