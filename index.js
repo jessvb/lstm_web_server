@@ -9,11 +9,9 @@ const port = 1234;
 /* ========================== Variables ======================== */
 /* ============================================================= */
 
-// Log Settings
-const LOG_QUERY_INPUTS  = true;
-const LOG_SEED          = true;
-// Logs to the console
-const LOG_TEXT_GEN_PROGRESS = true;
+const LOG_QUERY_INPUTS  = true;     // Logs to the console all of the query stuff
+const LOG_SEED          = true;     // Logs to the console the seed that is being used
+const LOG_TEXT_GEN_PROGRESS = true; // Logs to the console the progress of generating text every 20%
 
 // This is the default model given in case there is no model requested by the url
 const DEFAULT_MODEL = 'nietzsche';
@@ -24,6 +22,8 @@ const DEFAULT_OUTPUT_LEN = 100;
 let modelFileNames = {
   aliceInWonderland_1:  "AiW-1.json" ,
   aliceInWonderland_5:  "AiW-5.json" ,
+  aliceInWonderland_10: "AiW-10.json",
+  aliceInWonderland_15: "AiW-15.json",
   aliceInWonderland_20: "AiW-20.json",
 
   drSeuss_1:  "dr-seuss-1.json" ,
@@ -38,41 +38,21 @@ let modelFileNames = {
 
   wizardOfOz_1:  "WoOz-1.json" ,
   wizardOfOz_5:  "WoOz-5.json" ,
+  wizardOfOz_10: "WoOz-10.json",
+  wizardOfOz_15: "WoOz-15.json",
   wizardOfOz_20: "WoOz-20.json",
 
   nietzsche: 'nietzsche.json',
   harryPotter: 'harryPotter.json',
 };
 // The variable where all the model objects will be stored and used
-const models = {
-  aliceInWonderland_1:  null ,
-  aliceInWonderland_5:  null ,
-  aliceInWonderland_20: null,
-
-  drSeuss_1:  null ,
-  drSeuss_5:  null ,
-  drSeuss_10: null,
-  drSeuss_20: null,
-
-  narnia_1_1: null,
-  narnia_1_5: null,
-  narnia_1_10:null,
-  narnia_1_20:null,
-
-  wizardOfOz_1:  null ,
-  wizardOfOz_5:  null ,
-  wizardOfOz_20: null,
-
-  nietzsche: 'nietzsche.json',
-  harryPotter: 'harryPotter.json'
-}
+const models = {};
 // Charsets shared between models
 // (e.g. for models trained on same dataset saved at different epochs)
 const alice = [
-  "\n", " ", "!", "(", ")", "*", ",", "-", ".", ":", ";", "?", "[", "]",
-  "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n",
-  "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "—", "‘",
-  "’", "“", "”"
+  "\n", " ", "!", "\"", "'", "(", ")", "*", ",", "-", ".", ":", ";", "?",
+  "[", "]", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l",
+  "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"
 ];
 const narnia_1 = [
   "\n", " ", "!", "\"", "'", "(", ")", ",", "-", ".", ":", ";", "?", "_",
@@ -86,7 +66,7 @@ const drSeuss = [
   "u", "v", "w", "x", "y", "z", "‘"
 ];
 const woOz = [
-  "\n", " ", "!", "\"", "'", "(",")", ",", "-", ".", "0", "1", "2", "3",
+  "\n", " ", "!", "\"", "'", "(", ")", ",", "-", ".", "0", "1", "2", "3",
   "4", "5", "6", "7", "8", "9", ":", ";", "?", "a", "b", "c", "d", "e",
   "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s",
   "t", "u", "v", "w", "x", "y", "z"
@@ -155,10 +135,7 @@ async function loadModel (selectedModel) {
   const path = 'file://./models/' + selectedModel
   const model = await tf.loadModel(path);
   // returns the model and its accompanying data
-  return {
-    "model": model,
-    "lstmLayersSizesInput": lstmLayerSizes(model)
-  };
+  return model;
 }
 
 
@@ -216,26 +193,6 @@ function sample(preds, temperature) {
 /* ============================================================= */
 /* ==== functions from orig LoadableLSTMTextGenerator class ==== */
 /* ============================================================= */
-
-/**
-  * Get a representation of the sizes of the LSTM layers in the model.
-  *
-  * @returns {number | number[]} The sizes (i.e., number of units) of the
-  *   LSTM layers that the model contains. If there is only one LSTM layer, a
-  *   single number is returned; else, an Array of numbers is returned.
-  */
-function lstmLayerSizes(model) {
-  if (model == null) {
-    throw new Error('Load model first.');
-  }
-  const numLSTMLayers = model.layers.length - 1;
-  const layerSizes = [];
-  for (let i = 0; i < numLSTMLayers; ++i) {
-    layerSizes.push(model.layers[i].units);
-  }
-  return layerSizes.length === 1 ? layerSizes[0] : layerSizes;
-}
-
 
 
 /**
@@ -335,7 +292,7 @@ async function onTextGenerationChar(charac, len) {
 async function generateText(currentModel, sampleLen, outputLen, seedTextInput) {
   try {
     // loads the currentModel's preloaded model
-    let model = models[currentModel].model
+    let model = models[currentModel]
     // Loads the charset for the currentModel
     let charSet = charSets[currentModel];
     // Determines the length of the charset
@@ -401,14 +358,11 @@ async function generateText(currentModel, sampleLen, outputLen, seedTextInput) {
     generatedTextInput = sentence;
     const currStatus = 'Done generating text.';
     console.log(currStatus);
-
-    console.log('sentence in generateText: ' + sentence);
     return sentence;
   } catch (err) {
     console.log(`ERROR: Failed to generate text: ${err.message}, ${err.stack}`);
   }
 }
-
 
 
 
@@ -427,7 +381,6 @@ async function setUp() {
     if(request.url == "/favicon.ico")
       return response.end();
 
-    console.log("\n\nAnswering New Request!!!\n")
     var q, respJSON;
 
     // respond to query with generated text
@@ -435,29 +388,30 @@ async function setUp() {
 
     // Logs to the console the Data given in the url
     if(LOG_QUERY_INPUTS){
+      console.log("New Request Being Handled!");
       console.log("Data From URL:")
       console.log(q);
       console.log("\n");
     }
 
-    // Reassigns the global variable which defaults to the DEFAULT_OUTPUT_LEN
-    outputLen = q.outputLength || DEFAULT_OUTPUT_LEN;
+    // Reassigns the global variable which defaults to DEFAULT_OUTPUT_LEN
+    const outputLen = q.outputLength || DEFAULT_OUTPUT_LEN;
 
     // Assigns a default model
     let currentModel = DEFAULT_MODEL;
 
-    // If there is a query for the model
+    // Uses the request model if it exists
     if(q.model) {
       if(models[q.model])
         currentModel = q.model;
       else
-        console.log(`  Requested model (${q.model}) does not exist. Using default model.`);
+        console.log(`  Requested model (${q.model}) does not exist. Using default model: "${DEFAULT_MODEL}"`);
     }
 
     // if there is no input text, return an error
     if (!(q.inputText)) {
       console.log('There was no input text provided. Throwing error...');
-      respJSON = { generated: null };
+      respJSON = { generated: "There was no input text provided." };
       response.writeHead(200, { 'Content-Type': 'application/json', 'json': 'true' });
       response.write(JSON.stringify(respJSON));
       response.end();
