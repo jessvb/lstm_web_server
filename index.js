@@ -31,6 +31,11 @@ let modelFileNames = {
   drSeuss_10: "dr-seuss-10.json",
   drSeuss_20: "dr-seuss-20.json",
 
+  nancy_1: "nancy-1.json",
+  nancy_5: "nancy-5.json",
+  nancy_20: "nancy-20.json",
+  nancy_40: "nancy-40.json",
+
   narnia_1_1: "narnia-1-1.json",
   narnia_1_5: "narnia-1-5.json",
   narnia_1_10:"narnia-1-10.json",
@@ -58,6 +63,11 @@ const narnia_1 = [
   "\n", " ", "!", "\"", "'", "(", ")", ",", "-", ".", ":", ";", "?", "_",
   "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n",
   "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"
+];
+const nancy = [
+  "\n", " ", "!", "\"", "'", ",", "-", ".", "0", "1", "4", "5", "8", ":", ";",
+  "?", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n",
+  "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "£", "—", "’"
 ];
 const drSeuss = [
   "\n", " ", "!", "\"", "$", "'", "(", ")", ",", "-", ".", "/", "0", "1",
@@ -87,6 +97,11 @@ const charSets = {
   drSeuss_5: drSeuss,
   drSeuss_10: drSeuss,
   drSeuss_20: drSeuss,
+
+  nancy_1: nancy,
+  nancy_5: nancy,
+  nancy_20: nancy,
+  nancy_40: nancy,
 
   narnia_1_1: narnia_1,
   narnia_1_5: narnia_1,
@@ -122,7 +137,7 @@ const charSets = {
 let temperatureInput = 0.75;
 // let seedTextInput = 'This is a seed input. Hopefully it works.'; TODO THIS IS LENGTH 40 VS 60 FOR NIET VS HARRYPOTTER
 let seedTextInput = "This is a seed input. Hopefully it works and we'll get results.";
-// const sampleLen = 40; TODO CHANGE THIS TO 40/60 FOR NIET VS HARRYPOTTER
+
 const sampleLen = 40;
 
 
