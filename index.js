@@ -14,7 +14,7 @@ const LOG_SEED          = true;     // Logs to the console the seed that is bein
 const LOG_TEXT_GEN_PROGRESS = true; // Logs to the console the progress of generating text every 20%
 
 // This is the default model given in case there is no model requested by the url
-const DEFAULT_MODEL = 'nietzsche';
+const DEFAULT_MODEL = 'narnia_1_20';
 const DEFAULT_OUTPUT_LEN = 100;
 
 // Stores the location of the tfjs model for the model with the given name
@@ -439,7 +439,7 @@ async function setUp() {
     // Handles Tests
     if (q.inputText == 'test') {
       console.log('This is a test!');
-      generatedText = 'test returned correctly';
+      generatedText = "test returned correctly! Running Tom's Code";
       respJSON = { generated: generatedText };
       response.writeHead(200, { 'Content-Type': 'application/json', 'json': 'true' });
       response.write(JSON.stringify(respJSON));

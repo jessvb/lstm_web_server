@@ -4,6 +4,26 @@ This project will generate text using a pretrained LSTM network when provided wi
 
 Before running this project, install tfjs-node with `npm install @tensorflow/tfjs-node`. To run to project, use `node index.js`.
 
+## Querying the Node server
+
+When querying the node server, you can provide various parameters such as the model you want to use, the seed text you want to provide, and the length you would like the generated text to be (in characters). The only parameter that is required is the seed text, which must meet or exceed a length of 40 characters.
+
+### Model Name
+
+You can then specify the model you would like to load by adding `model=` and adding the name of the model. Names of models currently included can be found in the variable `modelFileNames` in the index.js file.
+
+### Seed Text
+
+When querying the node server, the only required input is the seed text, `inputText=`. The seed text needs to be at least 40 characters long, for all the current models at the moment.
+
+### Output Text Length
+
+You can also specify the number of characters which you want the resulting string to be. Simply add `outputLength=` followed by the number of characters.
+
+### Example URL
+`https://path-to-the-node-server/?inputText=hello%20there%20how%20are%20you%20today%20because%20I%20am%20doing%20pretty%20well?model=drSeuss_20?outputLength=10`
+
+
 ## Overview from [Original Source](https://github.com/tensorflow/tfjs-examples)
 
 This example illustrates how to use TensorFlow.js to train a LSTM model to
