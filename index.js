@@ -1,5 +1,14 @@
 const tf = require('@tensorflow/tfjs');
 require('@tensorflow/tfjs-node');
+const spellcheck = require('nodehun-sentences');
+const fs = require("fs");
+const Nodehun = require('nodehun');
+const hunspell = new Nodehun(
+  fs.readFileSync('dictionaries/en_US.aff'),
+  fs.readFileSync('dictionaries/en_US.dic')
+);
+
+
 // for simple_server:
 const url = require('url');
 const http = require('http');
@@ -9,9 +18,11 @@ const port = 1234;
 /* ========================== Variables ======================== */
 /* ============================================================= */
 
-const LOG_QUERY_INPUTS  = true;     // Logs to the console all of the query stuff
-const LOG_SEED          = true;     // Logs to the console the seed that is being used
-const LOG_TEXT_GEN_PROGRESS = true; // Logs to the console the progress of generating text every 20%
+const LOG_QUERY_INPUTS  = true;     // Logs all of the query stuff
+const LOG_SEED          = true;     // Logs the seed that is being used
+const LOG_TEXT_GEN_PROGRESS = true; // Logs the progress of generating text every 20%
+const LOG_TYPO_CORRECTION   = true; // Logs the generated text before and after beign corrected for typos
+const LOG_TYPOS         = false;    // Logs the typos found in the generated text
 
 // This is the default model given in case there is no model requested by the url
 const DEFAULT_MODEL = 'narnia_1_20';
@@ -23,7 +34,6 @@ let modelFileNames = {
   aliceInWonderland_1:  "AiW-1.json" ,
   aliceInWonderland_5:  "AiW-5.json" ,
   aliceInWonderland_10: "AiW-10.json",
-  aliceInWonderland_15: "AiW-15.json",
   aliceInWonderland_20: "AiW-20.json",
 
   drSeuss_1:  "dr-seuss-1.json" ,
@@ -44,7 +54,6 @@ let modelFileNames = {
   wizardOfOz_1:  "WoOz-1.json" ,
   wizardOfOz_5:  "WoOz-5.json" ,
   wizardOfOz_10: "WoOz-10.json",
-  wizardOfOz_15: "WoOz-15.json",
   wizardOfOz_20: "WoOz-20.json",
 
   nietzsche: 'nietzsche.json',
@@ -390,7 +399,6 @@ async function setUp() {
 
   // set up the server
   const app = http.createServer(async function (request, response) {
-
     // TO-DO
     // Respond to the favicon.ico request properly if necessary
     if(request.url == "/favicon.ico")
@@ -433,6 +441,13 @@ async function setUp() {
       return;
     }
 
+
+
+
+
+
+
+
     // This will store the model's generated text
     let generatedText = '';
 
@@ -458,7 +473,7 @@ async function setUp() {
       console.log('  Seed: ' + seedTextInput);
     }
 
-    // Generate text and output in console.
+    // Generate text
     try {
       generatedText = await generateText(
         currentModel,
@@ -467,14 +482,66 @@ async function setUp() {
         seedTextInput);
     } catch (err) {
       console.log(err);
+      generatedText = "An error has occurred.";
     }
 
-    // The responseJSON is made and returned.
-    respJSON = { generated: generatedText };
 
-    response.writeHead(200, { 'Content-Type': 'application/json', 'json': 'true' });
-    response.write(JSON.stringify(respJSON));
-    response.end();
+    // Runs a Spell Checker
+    let corpus = generatedText;
+    console.log(`  Sending "${corpus}" to the spell checker`);
+    try{
+      spellcheck(hunspell, corpus, (error, typos)=> {
+
+        if(error) {
+          console.log(`ERROR: Failed to spellcheck text.`)
+          generatedText = "An error has occurred.";
+
+          // The responseJSON is made and returned.
+          respJSON = { generated: "An error has occured." };
+          response.writeHead(200, { 'Content-Type': 'application/json', 'json': 'true' });
+          response.write(JSON.stringify(respJSON));
+          response.end();
+        }
+
+        if(LOG_TYPOS) {
+          console.log("\n  ==== Let's see some TYPOS ");
+          console.log(typos);
+        }
+
+        if(LOG_TYPO_CORRECTION) {
+          console.log("/n==== The text being spellchecked:");
+          console.log(corpus);
+          console.log("==== END TEXT");
+        }
+
+        // Corrects the typos with the first suggestion
+        for (let i = typos.length - 1; i >= 0; i--) {
+          const pos = typos[i].positions[0];
+          const correction = typos[i].suggestions[0];
+          corpus = corpus.slice(0,pos.from) + correction + corpus.slice(pos.to);
+        }
+
+        if(LOG_TYPO_CORRECTION) {
+          console.log("/n==== The text after getting corrected:");
+          console.log(corpus);
+          console.log("==== END TEXT/n");
+        }
+
+        // The responseJSON is made and returned.
+        respJSON = { generated: corpus };
+        response.writeHead(200, { 'Content-Type': 'application/json', 'json': 'true' });
+        response.write(JSON.stringify(respJSON));
+        response.end();
+      });
+    } catch (err) {
+      console.log(`ERROR: Failed to spellcheck text: ${err.message}`);
+
+      // The responseJSON is made and returned.
+      respJSON = { generated: "An error has occured when spellchecking." };
+      response.writeHead(200, { 'Content-Type': 'application/json', 'json': 'true' });
+      response.write(JSON.stringify(respJSON));
+      response.end();
+    }
   });
 
   // start listening for requests

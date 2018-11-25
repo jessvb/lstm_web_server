@@ -16,9 +16,13 @@ You can then specify the model you would like to load by adding `model=` and add
 
 When querying the node server, the only required input is the seed text, `inputText=`. The seed text needs to be at least 40 characters long, for all the current models at the moment.
 
-### Output Text Length
+### Output Text Length 
 
 You can also specify the number of characters which you want the resulting string to be. Simply add `outputLength=` followed by the number of characters.
+
+### Spell Check [Default=true]
+
+You can deactivate the spellchecker for the model by setting `spellcheck=0` in the query. By default, the model's output gets checked by a spell checker and takes the first suggestion for the correction.
 
 ### Example URL
 `https://path-to-the-node-server/?inputText=hello%20there%20how%20are%20you%20today%20because%20I%20am%20doing%20pretty%20well?model=drSeuss_20?outputLength=10`
