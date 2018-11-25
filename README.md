@@ -25,7 +25,7 @@ You can also specify the number of characters which you want the resulting strin
 You can deactivate the spellchecker for the model by setting `spellcheck=0` in the query. By default, the model's output gets checked by a spell checker and takes the first suggestion for the correction.
 
 ### Example URL
-`https://path-to-the-node-server/?inputText=hello%20there%20how%20are%20you%20today%20because%20I%20am%20doing%20pretty%20well?model=drSeuss_20?outputLength=10`
+`path-to-the-node-server:1234/?inputText=hello%20there%20how%20are%20you%20today%20because%20I%20am%20doing%20pretty%20well?model=drSeuss_20?outputLength=10`
 
 
 ## Overview from [Original Source](https://github.com/tensorflow/tfjs-examples)
