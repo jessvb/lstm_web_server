@@ -16,7 +16,7 @@ You can then specify the model you would like to load by adding `model=` and add
 
 When querying the node server, the only required input is the seed text, `inputText=`. The seed text needs to be at least 40 characters long, for all the current models at the moment.
 
-### Output Text Length 
+### Output Text Length
 
 You can also specify the number of characters which you want the resulting string to be. Simply add `outputLength=` followed by the number of characters.
 

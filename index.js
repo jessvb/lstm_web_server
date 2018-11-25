@@ -428,8 +428,9 @@ async function setUp() {
       if(models[q.model])
         currentModel = q.model;
       else
-        console.log(`  Requested model (${q.model}) does not exist. Using default model: "${DEFAULT_MODEL}"`);
+        console.log(`  Requested model (${q.model}) does not exist.`);
     }
+    console.log(`  Using the following model: ${currentModel}`);
 
     // if there is no input text, return an error
     if (!(q.inputText)) {
@@ -488,9 +489,9 @@ async function setUp() {
 
     // Runs a Spell Checker
     let corpus = generatedText;
-    console.log(`  Sending "${corpus}" to the spell checker`);
+    console.log(`Sending generatedText to the spell checker`);
     try{
-      spellcheck(hunspell, corpus, (error, typos)=> {
+      spellcheck(hunspell, corpus, (error, typos) => {
 
         if(error) {
           console.log(`ERROR: Failed to spellcheck text.`)
@@ -509,7 +510,7 @@ async function setUp() {
         }
 
         if(LOG_TYPO_CORRECTION) {
-          console.log("/n==== The text being spellchecked:");
+          console.log("\n==== The text being spellchecked:");
           console.log(corpus);
           console.log("==== END TEXT");
         }
@@ -522,9 +523,9 @@ async function setUp() {
         }
 
         if(LOG_TYPO_CORRECTION) {
-          console.log("/n==== The text after getting corrected:");
+          console.log("\n==== The text after getting corrected:");
           console.log(corpus);
-          console.log("==== END TEXT/n");
+          console.log("==== END TEXT\n");
         }
 
         // The responseJSON is made and returned.
