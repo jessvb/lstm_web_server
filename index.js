@@ -10,7 +10,7 @@ const hunspell = new Nodehun(
 
 
 // for simple_server:
-const url = require('url');
+const url  = require('url');
 const http = require('http');
 const port = 1234;
 
@@ -27,100 +27,122 @@ const LOG_TYPOS         = false;    // Logs the typos found in the generated tex
 // This is the default model given in case there is no model requested by the url
 const DEFAULT_MODEL = 'narnia_1_20';
 const DEFAULT_OUTPUT_LEN = 100;
+const BLACKLISTED_WORDS = [ "mating", "fuck", "shit", "crap"];
+
 
 // Stores the location of the tfjs model for the model with the given name
 // the names are in the form <DATASET>_<Epochs trained>
 let modelFileNames = {
+  // because of harry potter's large character set, the model initialized
+  // for this dataset will be considered the initial model for all other text as well
+  // in order to take up less memory when all models are loaded
+  newModel: "harryPotter-0.json",
+
   aliceInWonderland_1:  "AiW-1.json" ,
   aliceInWonderland_5:  "AiW-5.json" ,
-  aliceInWonderland_10: "AiW-10.json",
   aliceInWonderland_20: "AiW-20.json",
 
   drSeuss_1:  "dr-seuss-1.json" ,
   drSeuss_5:  "dr-seuss-5.json" ,
-  drSeuss_10: "dr-seuss-10.json",
   drSeuss_20: "dr-seuss-20.json",
+
+  harryPotter_1: "harryPotter-1.json",
+  harryPotter_5: "harryPotter-5.json",
+  harryPotter_20: "harryPotter-20.json",
 
   nancy_1: "nancy-1.json",
   nancy_5: "nancy-5.json",
   nancy_20: "nancy-20.json",
-  nancy_40: "nancy-40.json",
 
   narnia_1_1: "narnia-1-1.json",
   narnia_1_5: "narnia-1-5.json",
-  narnia_1_10:"narnia-1-10.json",
   narnia_1_20:"narnia-1-20.json",
+
+  tomSawyer_1: "tomSawyer-1.json",
+  tomSawyer_5: "tomSawyer-5.json",
+  tomSawyer_20: "tomSawyer-20.json",
 
   wizardOfOz_1:  "WoOz-1.json" ,
   wizardOfOz_5:  "WoOz-5.json" ,
-  wizardOfOz_10: "WoOz-10.json",
   wizardOfOz_20: "WoOz-20.json",
 
   nietzsche: 'nietzsche.json',
   harryPotter: 'harryPotter.json',
 };
+
 // The variable where all the model objects will be stored and used
 const models = {};
+
 // Charsets shared between models
 // (e.g. for models trained on same dataset saved at different epochs)
-const alice = [
+const alice       = [
   "\n", " ", "!", "\"", "'", "(", ")", "*", ",", "-", ".", ":", ";", "?",
   "[", "]", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l",
   "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"
 ];
-const narnia_1 = [
-  "\n", " ", "!", "\"", "'", "(", ")", ",", "-", ".", ":", ";", "?", "_",
-  "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n",
-  "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"
-];
-const nancy = [
-  "\n", " ", "!", "\"", "'", ",", "-", ".", "0", "1", "4", "5", "8", ":", ";",
-  "?", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n",
-  "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "£", "—", "’"
-];
-const drSeuss = [
+const drSeuss     = [
   "\n", " ", "!", "\"", "$", "'", "(", ")", ",", "-", ".", "/", "0", "1",
   "3", "4", "6", "8", "9", ":", ";", "?", "a", "b", "c", "d", "e", "f",
   "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t",
   "u", "v", "w", "x", "y", "z", "‘"
 ];
-const woOz = [
+const harryPotter = [
+  " ", "!", "\"", "'", "(", ")", "*", ",", "-", ".", "0", "1", "2", "3",
+  "4", "5", "6", "7", "8", "9", ":", ";", "?", "\\", "a", "b", "c", "d",
+  "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r",
+  "s", "t", "u", "v", "w", "x", "y", "z", "~", "–", "“"
+];
+const nancy       = [
+  "\n", " ", "!", "\"", "'", ",", "-", ".", "0", "1", "4", "5", "8", ":", ";",
+  "?", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n",
+  "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "£", "—", "’"
+];
+const narnia_1    = [
+  "\n", " ", "!", "\"", "'", "(", ")", ",", "-", ".", ":", ";", "?", "_",
+  "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n",
+  "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"
+];
+const tomSawyer   = [
+  "\n", " ", "!", "\"", "'", "*", ",", "-", ".", "0", "1", "2", "3", "4",
+  "6", "7", "8", ":", ";", "?", "[", "]", "a", "b", "c", "d", "e", "f",
+  "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u",
+  "v", "w", "x", "y", "z"
+];
+const woOz        = [
   "\n", " ", "!", "\"", "'", "(", ")", ",", "-", ".", "0", "1", "2", "3",
   "4", "5", "6", "7", "8", "9", ":", ";", "?", "a", "b", "c", "d", "e",
   "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s",
   "t", "u", "v", "w", "x", "y", "z"
 ];
-const nancyDrew = [
-  "\n", " ", "!", "\"", "'", ",", "-", ".", "0", "1", "4", "5", "8", ":",
-  ";", "?", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l",
-  "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
-  "£", "—", "’"
-];
 // Mapping of individual models with their charsets
 const charSets = {
+  // a newly initiated model that has not seen any text, specifically the one prepared
+  // to train on Harry Potter
+  new_model: newModel,
+
   aliceInWonderland_1: alice,
   aliceInWonderland_5: alice,
   aliceInWonderland_20: alice,
 
   drSeuss_1: drSeuss,
   drSeuss_5: drSeuss,
-  drSeuss_10: drSeuss,
   drSeuss_20: drSeuss,
+
+  harryPotter_1: harryPotter,
+  harryPotter_5: harryPotter,
+  harryPotter_20: harryPotter,
 
   nancy_1: nancy,
   nancy_5: nancy,
   nancy_20: nancy,
-  nancy_40: nancy,
 
   narnia_1_1: narnia_1,
   narnia_1_5: narnia_1,
-  narnia_1_10:narnia_1,
   narnia_1_20:narnia_1,
 
-  nancyDrew_1: nancyDrew,
-  nancyDrew_5: nancyDrew,
-  nancyDrew_20: nancyDrew,
-  nancyDrew_40: nancyDrew,
+  tomSawyer_1: tomSawyer,
+  tomSawyer_5: tomSawyer,
+  tomSawyer_20: tomSawyer,
 
   wizardOfOz_1: woOz,
   wizardOfOz_5: woOz,
@@ -142,11 +164,12 @@ const charSets = {
     '7', '9', '0', 'Q', 'X', '[', ']', 'Z', 'ä', '=', 'æ', 'ë', 'é', 'Æ'
   ],
 };
+
 // Smaller Temperature means less creative and more sensible
 let temperatureInput = 0.75;
 // let seedTextInput = 'This is a seed input. Hopefully it works.'; TODO THIS IS LENGTH 40 VS 60 FOR NIET VS HARRYPOTTER
 let seedTextInput = "This is a seed input. Hopefully it works and we'll get results.";
-
+// the models hosted on the web server all have sample length of 40
 const sampleLen = 40;
 
 
@@ -175,8 +198,14 @@ async function setupModels () {
     models[selectedModel] = model;
     console.log("    Loaded Model: " + selectedModel)
   }
+
+  let modelNames = ["aliceInWonderland_", "drSeuss_", "harryPotter_", "nancy_", "narnia_1_"];
+  for (let i = 0; i < modelNames.length; i++) {
+    models[modelNames[0] + "0"] = models["newModel"];
+  }
   console.log("Done loading all registered files.\n")
 }
+
 
 
 /* ============================================================= */
@@ -213,6 +242,8 @@ function sample(preds, temperature) {
     return tf.multinomial(unnormalized, 1, null, false).dataSync()[0];
   });
 }
+
+
 
 /* ============================================================= */
 /* ==== functions from orig LoadableLSTMTextGenerator class ==== */
@@ -391,6 +422,17 @@ async function generateText(currentModel, sampleLen, outputLen, seedTextInput) {
 
 
 /**
+ * Returns true if the provided word is in the list of blacklisted words
+ * false otherwise
+ */
+function isBlacklistedWord(word){
+  word = word.toLowerCase();
+  return BLACKLISTED_WORDS.indexOf(word) != -1;
+}
+
+
+
+/**
  * Function to set up the model / start the server / start listening for requests
  */
 async function setUp() {
@@ -404,14 +446,14 @@ async function setUp() {
     if(request.url == "/favicon.ico")
       return response.end();
 
-    var q, respJSON;
+    let q, respJSON;
 
     // respond to query with generated text
     q = url.parse(request.url, true).query;
 
     // Logs to the console the Data given in the url
     if(LOG_QUERY_INPUTS){
-      console.log("New Request Being Handled!");
+      console.log("==== New Request Being Handled!");
       console.log("Data From URL:")
       console.log(q);
       console.log("\n");
@@ -424,12 +466,13 @@ async function setUp() {
     let currentModel = DEFAULT_MODEL;
 
     // Uses the request model if it exists
-    if(q.model) {
+    if(q.model){
       if(models[q.model])
         currentModel = q.model;
       else
         console.log(`  Requested model (${q.model}) does not exist.`);
     }
+
     console.log(`  Using the following model: ${currentModel}`);
 
     // if there is no input text, return an error
@@ -442,26 +485,18 @@ async function setUp() {
       return;
     }
 
-
-
-
-
-
-
-
-    // This will store the model's generated text
-    let generatedText = '';
-
     // Handles Tests
     if (q.inputText == 'test') {
       console.log('This is a test!');
-      generatedText = "test returned correctly! Running Tom's Code";
-      respJSON = { generated: generatedText };
+      respJSON = { generated: "The test returned correctly!" };
       response.writeHead(200, { 'Content-Type': 'application/json', 'json': 'true' });
       response.write(JSON.stringify(respJSON));
       response.end();
       return;
     }
+
+    // This will store the model's generated text
+    let generatedText = '';
 
     // Determines if the input is of sufficient length
     if (q.inputText.length < sampleLen) {
@@ -471,7 +506,7 @@ async function setUp() {
     }
 
     if(LOG_SEED) {
-      console.log('  Seed: ' + seedTextInput);
+      console.log('==== Seed:\n  ' + seedTextInput);
     }
 
     // Generate text
@@ -483,13 +518,20 @@ async function setUp() {
         seedTextInput);
     } catch (err) {
       console.log(err);
-      generatedText = "An error has occurred.";
+      // The responseJSON is made and returned.
+      respJSON = { generated: "An error has occured when generating text." };
+      response.writeHead(200, { 'Content-Type': 'application/json', 'json': 'true' });
+      response.write(JSON.stringify(respJSON));
+      response.end();
+      return;
     }
 
 
     // Runs a Spell Checker
     let corpus = generatedText;
+
     console.log(`Sending generatedText to the spell checker`);
+
     try{
       spellcheck(hunspell, corpus, (error, typos) => {
 
@@ -518,8 +560,19 @@ async function setUp() {
         // Corrects the typos with the first suggestion
         for (let i = typos.length - 1; i >= 0; i--) {
           const pos = typos[i].positions[0];
-          const correction = typos[i].suggestions[0];
-          corpus = corpus.slice(0,pos.from) + correction + corpus.slice(pos.to);
+          const corrections = typos[i].suggestions;
+          let correctionIndex = 0;
+          for(let j = 0; j < corrections.length; j++, correctionIndex++) {
+            // if found a correction that is not blacklisted, then  use it
+            if(!isBlacklistedWord(corrections[correctionIndex]))
+              break;
+            // if reached the end, then let it be known that there was no suitable correction
+            if(correctionIndex >= corrections.length) {
+              console.log("Found no suitable replacement for the blacklisted correction.");
+              correctionIndex = 0;
+            }
+          }
+          corpus = corpus.slice(0,pos.from) + corrections[correctionIndex] + corpus.slice(pos.to);
         }
 
         if(LOG_TYPO_CORRECTION) {
@@ -534,11 +587,11 @@ async function setUp() {
         response.write(JSON.stringify(respJSON));
         response.end();
       });
-    } catch (err) {
-      console.log(`ERROR: Failed to spellcheck text: ${err.message}`);
-
+    }
+    catch (err) {
+      console.log(`ERROR: Failed to spell check text: ${err.message}`);
       // The responseJSON is made and returned.
-      respJSON = { generated: "An error has occured when spellchecking." };
+      respJSON = { generated: "An error has occured when spell-checking." };
       response.writeHead(200, { 'Content-Type': 'application/json', 'json': 'true' });
       response.write(JSON.stringify(respJSON));
       response.end();
@@ -548,5 +601,7 @@ async function setUp() {
   // start listening for requests
   app.listen(port);
 }
+
+
 
 setUp();
