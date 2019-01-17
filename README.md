@@ -6,7 +6,7 @@ Before running this project, install tfjs-node with `npm install @tensorflow/tfj
 
 ## Querying the Node server
 
-Every model in this node server has been saved at 1, 5, and 20 epochs
+Every model in this node server has been saved at 1, 5, and 20 epochs. 
 
 When querying the node server, you can provide various parameters such as the model you want to use, the seed text you want to provide, and the length you would like the generated text to be (in characters). The only parameter that is required is the seed text, which must meet or exceed a length of 40 characters.
 
