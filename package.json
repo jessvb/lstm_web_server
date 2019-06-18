@@ -9,7 +9,8 @@
   "author": "Jessica Van Brummelen",
   "license": "MIT",
   "dependencies": {
-    "@tensorflow/tfjs-node": "^0.1.21",
+    "@tensorflow/tfjs": "^1.2.1",
+    "@tensorflow/tfjs-node": "^1.2.1",
     "fs": "0.0.1-security",
     "nodehun": "^2.0.12",
     "nodehun-sentences": "^2.0.1"

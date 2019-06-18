@@ -1,5 +1,4 @@
-const tf = require('@tensorflow/tfjs');
-require('@tensorflow/tfjs-node');
+const tf = require('@tensorflow/tfjs-node');
 const spellcheck = require('nodehun-sentences');
 const fs = require("fs");
 const Nodehun = require('nodehun');
@@ -182,26 +181,13 @@ const sampleLen = 40;
 
 
 /**
- * Loads the text generator model at the given file path and returns it
- */
-async function loadModel (selectedModel) {
-  // acquires model
-  const path = 'file://./models/' + selectedModel
-  const model = await tf.loadModel(path);
-  // returns the model and its accompanying data
-  return model;
-}
-
-
-
-/**
  * Loads every model in the modelFileNames into the global variable "models"
  */
 async function setupModels () {
   console.log("\nBeginning to load all registered files.");
   for (let selectedModel in modelFileNames) {
-    // loadModel returns {model:model,lstmLayersSizesInput:lstmLayersSizes}
-    let model = await loadModel (modelFileNames[selectedModel]);
+    let ioHandler = tf.io.fileSystem(__dirname + '/models/' + modelFileNames[selectedModel]);
+    let model = await tf.loadLayersModel (ioHandler);
     models[selectedModel] = model;
     console.log("    Loaded Model: " + selectedModel)
   }
@@ -306,21 +292,6 @@ async function genText(currentModel, sentenceIndices, length, temperature, model
   temperatureScalar.dispose();
   return generated;
 }
-
-
-
-/**
- * Load generator (lstm model) function
- */
-async function loadGen(modelName) {
-
-  const path = 'file://./models/' + modelFileNames[modelName]
-  const model = await tf.loadModel(path);
-
-  lstmLayersSizesInput = lstmLayerSizes(model);
-  model.summary();
-  return model;
-};
 
 
 
@@ -524,6 +495,7 @@ async function setUp() {
         sampleLen,
         outputLen,
         seedTextInput);
+      console.log(generatedText);
     } catch (err) {
       console.log(err);
       // The responseJSON is made and returned.
@@ -540,7 +512,7 @@ async function setUp() {
 
     console.log(`Sending generatedText to the spell checker`);
     if(q.model.slice(-2) !== "_0") {
-      try{
+      try {
         spellcheck(hunspell, corpus, (error, typos) => {
           // what to do if there was an error within the spellcheck function
           if(error) {

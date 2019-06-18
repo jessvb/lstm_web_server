@@ -6,7 +6,7 @@ Before running this project, install tfjs-node with `npm install @tensorflow/tfj
 
 ## Querying the Node server
 
-Every model in this node server has been saved at 1, 5, and 20 epochs. 
+Every model in this node server has been saved at 1, 5, and 20 epochs.
 
 When querying the node server, you can provide various parameters such as the model you want to use, the seed text you want to provide, and the length you would like the generated text to be (in characters). The only parameter that is required is the seed text, which must meet or exceed a length of 40 characters.
 
@@ -29,6 +29,7 @@ You can deactivate the spellchecker for the model by setting `spellcheck=0` in t
 ### Example URL
 `path-to-the-node-server:1234/?inputText=hello%20there%20how%20are%20you%20today%20because%20I%20am%20doing%20pretty%20well&model=drSeuss_20&outputLength=10`
 
+`path-to-the-node-server:1234/?inputText=test&model=narnia_100`
 
 ## Overview from [Original Source](https://github.com/tensorflow/tfjs-examples)
 
