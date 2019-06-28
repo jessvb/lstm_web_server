@@ -420,22 +420,25 @@ async function setUp() {
 
   // set up the server
   const app = http.createServer(async function (request, response) {
-    // TO-DO
-    // Respond to the favicon.ico request properly if necessary
+    // TO-DO Respond to the favicon.ico request properly if necessary
     if(request.url == "/favicon.ico")
       return response.end();
 
-    let q, respJSON;
+    function respond (text) {
+      const respJSON = { generated: text };
+      response.writeHead(200, { 'Content-Type': 'application/json', 'json': 'true' });
+      response.write(JSON.stringify(respJSON));
+      response.end();
+    }
 
     // respond to query with generated text
-    q = url.parse(request.url, true).query;
+    let q = url.parse(request.url, true).query;
 
     // Logs to the console the Data given in the url
     if(LOG_QUERY_INPUTS){
       console.log("==== New Request Being Handled!");
-      console.log("Data From URL:")
+      console.log("  Data From URL:")
       console.log(q);
-      console.log("\n");
     }
 
     // Reassigns the global variable which defaults to DEFAULT_OUTPUT_LEN
@@ -443,51 +446,38 @@ async function setUp() {
 
     // Assigns a default model
     let currentModel = DEFAULT_MODEL;
-
-    // Uses the request model if it exists
     if(q.model){
       if(models[q.model])
         currentModel = q.model;
       else
         console.log(`  Requested model (${q.model}) does not exist.`);
     }
-
     console.log(`  Using the following model: ${currentModel}`);
 
     // if there is no input text, return an error
     if (!(q.inputText)) {
       console.log('There was no input text provided. Throwing error...');
-      respJSON = { generated: "There was no input text provided." };
-      response.writeHead(200, { 'Content-Type': 'application/json', 'json': 'true' });
-      response.write(JSON.stringify(respJSON));
-      response.end();
-      return;
+      return respond("There was no input text provided.");
     }
 
     // Handles Tests
     if (q.inputText == 'test') {
       console.log('This is a test!');
-      respJSON = { generated: "The test returned correctly!" };
-      response.writeHead(200, { 'Content-Type': 'application/json', 'json': 'true' });
-      response.write(JSON.stringify(respJSON));
-      response.end();
-      return;
+      return respond ("The test returned correctly!");
     }
+
+
+    // Determines if the input is of sufficient length
+    if (q.inputText.length < sampleLen)
+      console.log('inputText is too short. Using previous seed.');
+    else
+      seedTextInput = q.inputText;
+
+    if(LOG_SEED)
+      console.log('==== Seed:\n  ' + seedTextInput);
 
     // This will store the model's generated text
     let generatedText = '';
-
-    // Determines if the input is of sufficient length
-    if (q.inputText.length < sampleLen) {
-      console.log('inputText is too short. Using previous seed.');
-    } else {
-      seedTextInput = q.inputText;
-    }
-
-    if(LOG_SEED) {
-      console.log('==== Seed:\n  ' + seedTextInput);
-    }
-
     // Try to Generate the Text using the LSTM
     try {
       generatedText = await generateText(
@@ -498,91 +488,67 @@ async function setUp() {
       console.log(generatedText);
     } catch (err) {
       console.log(err);
-      // The responseJSON is made and returned.
-      respJSON = { generated: "An error has occured when generating text." };
-      response.writeHead(200, { 'Content-Type': 'application/json', 'json': 'true' });
-      response.write(JSON.stringify(respJSON));
-      response.end();
-      return;
+      return respond ('An error has occured when generating text.');
     }
 
+    // If the model is not trained, don't try to autocorrect it. 
+    if(q.model.slice(-2) = "_0")
+      return respond (generatedText);
 
     // Runs a Spell Checker
     let corpus = generatedText;
 
     console.log(`Sending generatedText to the spell checker`);
-    if(q.model.slice(-2) !== "_0") {
-      try {
-        spellcheck(hunspell, corpus, (error, typos) => {
-          // what to do if there was an error within the spellcheck function
-          if(error) {
-            console.log(`ERROR: Failed to spellcheck text.`)
-            generatedText = "An error has occurred.";
 
-            // The responseJSON is made and returned.
-            respJSON = { generated: "An error has occured." };
-            response.writeHead(200, { 'Content-Type': 'application/json', 'json': 'true' });
-            response.write(JSON.stringify(respJSON));
-            response.end();
-          }
-          // otherwise we continue and make edits given the typos and suggested corrections
-          if(LOG_TYPOS) {
-            console.log("\n  ==== Let's see some TYPOS ");
-            console.log(typos);
-          }
+    try {
+      spellcheck(hunspell, corpus, (error, typos) => {
+        // what to do if there was an error within the spellcheck function
+        if(error)
+          throw error;
 
-          if(LOG_TYPO_CORRECTION) {
-            console.log("\n==== The text being spellchecked:");
-            console.log(corpus);
-            console.log("==== END TEXT");
-          }
+        // otherwise we continue and make edits given the typos and suggested corrections
+        if(LOG_TYPOS) {
+          console.log("\n  ==== Let's see some TYPOS ");
+          console.log(typos);
+        }
 
-          // Corrects the typos with the first suggestion
-          for (let i = typos.length - 1; i >= 0; i--) {
-            const pos = typos[i].positions[0];
-            const corrections = typos[i].suggestions;
-            let correctionIndex = 0;
-            for(let j = 0; j < corrections.length; j++, correctionIndex++) {
-              // if found a correction that is not blacklisted, then  use it
-              if(!isBlacklistedWord(corrections[correctionIndex]))
-                break;
-              // if reached the end, then let it be known that there was no suitable correction
-              if(correctionIndex >= corrections.length) {
-                console.log("Found no suitable replacement for the blacklisted correction.");
-                correctionIndex = 0;
-              }
+        if(LOG_TYPO_CORRECTION) {
+          console.log("\n==== The text being spellchecked:");
+          console.log(corpus);
+          console.log("==== END TEXT");
+        }
+
+        // Corrects the typos with the first suggestion
+        for (let i = typos.length - 1; i >= 0; i--) {
+          const pos = typos[i].positions[0];
+          const corrections = typos[i].suggestions;
+          let correctionIndex = 0;
+          for(let j = 0; j < corrections.length; j++, correctionIndex++) {
+            // if found a correction that is not blacklisted, then  use it
+            if(!isBlacklistedWord(corrections[correctionIndex]))
+              break;
+            // if reached the end, then let it be known that there was no suitable correction
+            if(correctionIndex >= corrections.length) {
+              console.log("Found no suitable replacement for the blacklisted correction.");
+              correctionIndex = 0;
             }
-            corpus = corpus.slice(0,pos.from) + corrections[correctionIndex] + corpus.slice(pos.to);
           }
+          corpus = corpus.slice(0,pos.from) + corrections[correctionIndex] + corpus.slice(pos.to);
+        }
 
-          if(LOG_TYPO_CORRECTION) {
-            console.log("\n==== The text after getting corrected:");
-            console.log(corpus);
-            console.log("==== END TEXT\n");
-          }
+        if(LOG_TYPO_CORRECTION) {
+          console.log("\n==== The text after getting corrected:");
+          console.log(corpus);
+          console.log("==== END TEXT\n");
+        }
 
-          // The responseJSON is made and returned.
-          respJSON = { generated: corpus };
-          response.writeHead(200, { 'Content-Type': 'application/json', 'json': 'true' });
-          response.write(JSON.stringify(respJSON));
-          response.end();
-        });
-      }
-      catch (err) {
-        console.log(`ERROR: Failed to spell check text: ${err.message}`);
         // The responseJSON is made and returned.
-        respJSON = { generated: "An error has occured when spell-checking." };
-        response.writeHead(200, { 'Content-Type': 'application/json', 'json': 'true' });
-        response.write(JSON.stringify(respJSON));
-        response.end();
-      }
+        return respond (corpus);
+      });
     }
-    else {
-      // The responseJSON is made and returned.
-      respJSON = { generated: corpus };
-      response.writeHead(200, { 'Content-Type': 'application/json', 'json': 'true' });
-      response.write(JSON.stringify(respJSON));
-      response.end();
+    catch (err) {
+      console.log(`ERROR: Failed to spell check text: ${err.message}`);
+      return respond ('An error has occured when spell-checking.');
     }
   });
 
