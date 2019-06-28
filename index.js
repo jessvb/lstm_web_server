@@ -25,7 +25,7 @@ const LOG_TYPOS         = false;    // Logs the typos found in the generated tex
 
 // This is the default model given in case there is no model requested by the url
 const DEFAULT_MODEL = 'narnia_1_20';
-const DEFAULT_OUTPUT_LEN = 100;
+const DEFAULT_OUTPUT_LEN = 40;
 const BLACKLISTED_WORDS = [ "mating", "fuck", "shit", "crap"];
 
 
@@ -144,7 +144,7 @@ const charSets = {
   narnia_1_5: narnia_1,
   narnia_1_20:narnia_1,
 
-  tosawyer_0: harryPotter,
+  tomSawyer_0: harryPotter,
   tomSawyer_1: tomSawyer,
   tomSawyer_5: tomSawyer,
   tomSawyer_20: tomSawyer,
@@ -390,8 +390,7 @@ async function generateText(currentModel, sampleLen, outputLen, seedTextInput) {
     const sentence = await genText(
       currentModel, seedSentenceIndices, generateLength, temperature, model, charSet, charSetSize, sampleLen);
     generatedTextInput = sentence;
-    const currStatus = 'Done generating text.';
-    console.log(currStatus);
+    console.log('Done generating text.');
     return sentence;
   } catch (err) {
     console.log(`ERROR: Failed to generate text: ${err.message}, ${err.stack}`);
@@ -491,8 +490,8 @@ async function setUp() {
       return respond ('An error has occured when generating text.');
     }
 
-    // If the model is not trained, don't try to autocorrect it. 
-    if(q.model.slice(-2) = "_0")
+    // If the model is not trained, don't try to autocorrect it.
+    if(currentModel.slice(-2) == "_0")
       return respond (generatedText);
 
     // Runs a Spell Checker

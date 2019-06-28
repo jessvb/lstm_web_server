@@ -28,7 +28,7 @@ const LOG_TEXT_GEN_PROGRESS = true; // Logs the progress of generating text ever
 const LOG_WORD_TOKENIZING = false;  // Logs the number that each word is mapped to
 
 const DEFAULT_MODEL = 'narnia';
-const DEFAULT_OUTPUT_LEN = 10;
+const DEFAULT_OUTPUT_LEN = 40;
 
 const modelNames = ["aliceInWonderland", "drSeuss", "hamlet", "harryPotter", "hungerGames", "nancy", "narnia", 'shakespeare', 'wizardOfOz'];
 

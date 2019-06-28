@@ -9,11 +9,6 @@
  * For a speed comparison, the original character-based narnia_20 model took about 31,000 ms to gen
  * a string of 400 characters. In contrast, this new word-based model takes around 25,000 ms to
  * gen a string of about 420 characters.
- *
- * Next, I will try a new approach to character-based text generation which Hal suggested I look
- * into called "Unsmoothed Maximum Likelihood Character Level Language Model" in the following link:
- *
- * https://nbviewer.jupyter.org/gist/yoavg/d76121dfde2618422139?utm_content=bufferefcf2&utm_medium=social&utm_source=plus.google.com&utm_campaign=buffer
  */
 
 console.log("\n\n");
@@ -32,9 +27,9 @@ const LOG_TEXT_GEN_PROGRESS = true; // Logs the progress of generating text ever
 const LOG_WORD_TOKENIZING = false;  // Logs the number that each word is mapped to
 
 const DEFAULT_MODEL = 'newModel';
-const DEFAULT_OUTPUT_LEN = 10;
+const DEFAULT_OUTPUT_LEN = 40;
 
-const modelNamePrefixes = ["aliceInWonderland_", "drSeuss_", "harryPotter_", "nancy_", "narnia_"]
+const modelNamePrefixes = ["aliceInWonderland_", "drSeuss_", "harryPotter_", "nancy_", "narnia_", "tomSawyer_"]
 
 
 // will get filled by the tensorflowjs model instances.
@@ -251,14 +246,9 @@ async function setup () {
     // split the seed text into a list of words
     let seed = q.inputText.split(' ');
 
-    // TODO Check for inputlength
     try {
-
-      // .. generate here
       let corpus = q.inputText;
-
-      let charset = charsets[modelName.slice(0, modelName.indexOf('_'))]
-
+      let charset = charsets[modelName.slice(0, modelName.indexOf('_'))];
       let result = await generateText (currentModel, charset, corpus, outputLen);
 
       respJSON = { generated: result };
