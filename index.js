@@ -186,7 +186,7 @@ const sampleLen = 40;
 async function setupModels () {
   console.log("\nBeginning to load all registered files.");
   for (let selectedModel in modelFileNames) {
-    let ioHandler = tf.io.fileSystem(__dirname + '/models/' + modelFileNames[selectedModel]);
+    let ioHandler = tf.io.fileSystem(__dirname + '/char-based-models/' + modelFileNames[selectedModel]);
     let model = await tf.loadLayersModel (ioHandler);
     models[selectedModel] = model;
     console.log("    Loaded Model: " + selectedModel)

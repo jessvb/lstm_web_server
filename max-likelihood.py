@@ -47,6 +47,7 @@ models = {
     'nancy':            'max-likelihood-models/nancy_model.json',
     'narnia':           'max-likelihood-models/narnia_model.json',
     'shakespeare':      'max-likelihood-models/shakespeare_model.json',
+    'tomSawyer':        'max-likelihood-models/tomSawyer_model.json',
     'wizardOfOz':       'max-likelihood-models/WoOz_model.json',
 }
 
