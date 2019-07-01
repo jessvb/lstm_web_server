@@ -41,25 +41,25 @@ For the char-based and word-based models, the structure for the models is `<name
     <tr>
         <td>alice-in-wonderland.txt</td>
         <td>aliceInWonderland_0<br/>aliceInWonderland_1<br/>aliceInWonderalnd_5<br/>aliceInWonderland_20</td>
-        <td>aliceInWonderland_0<br/>aliceinWonderland_25<br/>aliceinWonderland_100<br/>aliceinWonderland_500</td>
+        <td> (WIP) <br/> aliceInWonderland_0<br/>aliceinWonderland_25<br/>aliceinWonderland_100<br/>aliceinWonderland_500</td>
         <td>aliceInWonderland</td>
     </tr>
     <tr>
         <td>drseuss.txt</td>
         <td>drSeuss_0<br/>drSeuss_1<br/>drSeuss_5<br/>drSeuss_20</td>
-        <td>drSeuss_0<br/>drSeuss_25<br/>drSeuss_100<br/>drSeuss_500</td>
+        <td> (WIP) <br/> drSeuss_0<br/>drSeuss_25<br/>drSeuss_100<br/>drSeuss_500</td>
         <td>drSeuss</td>
     </tr>
     <tr>
         <td>harry-potter-1.txt</td>
         <td>harryPotter_0<br/>harryPotter_1<br/>harryPotter_5<br/>harryPotter_20</td>
-        <td>harryPotter_0<br/>harryPotter_25<br/>harryPotter_100<br/>harryPotter_500</td>
+        <td> (WIP) <br/> harryPotter_0<br/>harryPotter_25<br/>harryPotter_100<br/>harryPotter_500</td>
         <td>harryPotter</td>
     </tr>
     <tr>
         <td>nancy-drew.txt</td>
         <td>nancy_0<br/>nancy_1<br/>nancy_5<br/>nancy_20</td>
-        <td>nancy_0<br/>nancy_25<br/>nancy_100<br/>nancy_500</td>
+        <td> (WIP) <br/> nancy_0<br/>nancy_25<br/>nancy_100<br/>nancy_500</td>
         <td>nancy</td>
     </tr>
     <tr>
@@ -71,13 +71,13 @@ For the char-based and word-based models, the structure for the models is `<name
     <tr>
         <td>tomsawyer.txt</td>
         <td>tomSawyer_0<br/>tomSawyer_1<br/>tomSawyer_5<br/>tomSawyer_20</td>
-        <td>tomSawyer_0<br/>tomSawyer_25<br/>tomSawyer_100<br/>tomSawyer_500</td>
+        <td> (WIP) <br/> tomSawyer_0<br/>tomSawyer_25<br/>tomSawyer_100<br/>tomSawyer_500</td>
         <td>tomSawyer</td>
     </tr>
     <tr>
         <td>wizard-of-oz.txt</td>
         <td>wizardOfOz_0<br/>wizardOfOz_1<br/>wizardOfOz_5<br/>wizardOfOz_20</td>
-        <td>wizardOfOz_0<br/>wizardOfOz_25<br/>wizardOfOz_100<br/>wizardOfOz_500</td>
+        <td> (WIP) <br/> wizardOfOz_0<br/>wizardOfOz_25<br/>wizardOfOz_100<br/>wizardOfOz_500</td>
         <td>wizardOfOz</td>
     </tr>
 </table>
