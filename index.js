@@ -1,11 +1,5 @@
 const tf = require('@tensorflow/tfjs-node');
-const spellcheck = require('nodehun-sentences');
 const fs = require("fs");
-const Nodehun = require('nodehun');
-const hunspell = new Nodehun(
-  fs.readFileSync('dictionaries/en_US.aff'),
-  fs.readFileSync('dictionaries/en_US.dic')
-);
 
 
 // for simple_server:
@@ -17,10 +11,7 @@ const port = 1234;
 /* ========================== Variables ======================== */
 /* ============================================================= */
 
-const LOG_QUERY_INPUTS  = true;     // Logs all of the query stuff
-const LOG_SEED          = true;     // Logs the seed that is being used
 const LOG_TEXT_GEN_PROGRESS = true; // Logs the progress of generating text every 20%
-const LOG_TYPO_CORRECTION   = true; // Logs the generated text before and after beign corrected for typos
 const LOG_TYPOS         = false;    // Logs the typos found in the generated text
 
 // This is the default model given in case there is no model requested by the url
@@ -172,7 +163,8 @@ const charSets = {
 };
 
 // Smaller Temperature means less creative and more sensible
-let temperatureInput = 0.75;
+const TEMPERATURE = 0.6;
+let temperatureScalar = tf.scalar(TEMPERATURE);
 // let seedTextInput = 'This is a seed input. Hopefully it works.'; TODO THIS IS LENGTH 40 VS 60 FOR NIET VS HARRYPOTTER
 let seedTextInput = "This is a seed input. Hopefully it works and we'll get results.";
 // the models hosted on the web server all have sample length of 40
@@ -257,30 +249,21 @@ function sample(preds, temperature) {
 async function genText(currentModel, sentenceIndices, length, temperature, model, charSet, charSetSize, sampleLen) {
 
   generatedTextInput = '';
-
-  console.log('Generating text...');
-  console.log("    Length: " + length);
-
-  const temperatureScalar = tf.scalar(temperature);
-
   let generated = '';
+
   while (generated.length < length) {
-    // Encode the current input sequence as a one-hot Tensor.
-    const inputBuffer =
-      new tf.TensorBuffer([1, sampleLen, charSetSize]);
-    for (let i = 0; i < sampleLen; ++i) {
-      inputBuffer.set(1, 0, i, sentenceIndices[i]);
-    }
-    const input = inputBuffer.toTensor();
 
-    // Call model.predict() to get the probability values of the next
-    // character.
+    // creates the one hot vector as input to the model
+    const input = tf.oneHot(sentenceIndices, charSetSize)
+      .reshape([1, sampleLen, charSetSize]);
+
+    // Call model.predict() to get the probability values of the next char
     const output = model.predict(input);
-
     // Sample randomly based on the probability values.
     const winnerIndex = sample(tf.squeeze(output), temperatureScalar);
     const winnerChar = charSet[winnerIndex];
-    await onTextGenerationChar(winnerChar, length);
+    generatedTextInput += winnerChar;
+    onTextGenerationChar(length);
 
     generated += winnerChar;
     sentenceIndices = sentenceIndices.slice(1);
@@ -289,7 +272,7 @@ async function genText(currentModel, sentenceIndices, length, temperature, model
     input.dispose();
     output.dispose();
   }
-  temperatureScalar.dispose();
+
   return generated;
 }
 
@@ -298,21 +281,13 @@ async function genText(currentModel, sentenceIndices, length, temperature, model
 /**
  * A function to call each time a character is obtained during text generation.
  *
- * @param {string} char The just-generated character.
+ * @param {number} len The target number of generated characters
  */
-async function onTextGenerationChar(charac, len) {
-  generatedTextInput += charac;
+async function onTextGenerationChar(len) {
   const charCount = generatedTextInput.length;
-  const generateLength = len;
-  const currStatus = `Generating text: ${charCount}/${generateLength} complete...`;
 
-  if(LOG_TEXT_GEN_PROGRESS && charCount % Math.round(generateLength/5) == 0)
-    console.log(currStatus);
-  //console.log('character in onTextGenerationChar: '+charac);
-  if (charCount / generateLength == 1) {
-    console.log(generatedTextInput);
-  }
-  await tf.nextFrame();
+  if(LOG_TEXT_GEN_PROGRESS && charCount % Math.round(len/5) == 0)
+    console.log(`Generating text: ${charCount}/${len} complete...`);
 }
 
 
@@ -322,73 +297,54 @@ async function onTextGenerationChar(charac, len) {
  * console as they are generated one by one.
  * @param currentModel, the string name of the current model
  *
-*/
+ */
 async function generateText(currentModel, sampleLen, outputLen, seedTextInput) {
+
+  // loads the currentModel's preloaded model
+  let model = models[currentModel]
+  // Loads the charset for the currentModel
+  let charSet = charSets[currentModel];
+  // Determines the length of the charset
+  let charSetSize = charSet.length;
+
+
+  // ERROR 1 - No Model
+  if (model == null)
+    return console.log('ERROR: Please load text data set first.');
+
+
+  // ERROR 2 - Improper value for number of chars to generate
+  if (outputLen <= 0)
+    return console.log(
+      `ERROR: Invalid generation length: ${outputLen}. ` +
+      `Generation length must be a positive number.`);
+
+
+  // ERROR 3 - Invalid Seed Text Length
+  if (seedTextInput.length < sampleLen) {
+    return console.log(
+      `ERROR: Seed text must have a length of at least ` +
+      `${sampleLen}, but has a length of ` +
+      `${seedTextInput.length}.`);
+  }
+
+
+  // 1. Select the last n-chars of the seed text, where n is the sample length
+  let seedSentence = seedTextInput;
+  seedSentence = seedSentence.slice(
+    seedSentence.length - sampleLen, seedSentence.length);
+
+  // 2. Converts the last n-chars into a list of n integers
+  let seedSentenceIndices = [];
+  for (let i = 0; i < seedSentence.length; ++i) {
+    seedSentenceIndices.push(
+      charSets[currentModel].indexOf(seedSentence[i]));
+  }
+
+  // 3. Attempt to generate the text
   try {
-    // loads the currentModel's preloaded model
-    let model = models[currentModel]
-    // Loads the charset for the currentModel
-    let charSet = charSets[currentModel];
-    // Determines the length of the charset
-    let charSetSize = charSet.length;
-
-    // ERROR 1 - No Model
-    if (model == null) {
-      console.log('ERROR: Please load text data set first.');
-      return;
-    }
-
-    const generateLength = outputLen;
-    const temperature = temperatureInput;
-
-    // ERROR 2 - Improper value for generateLength
-    if (!(generateLength > 0)) {
-      console.log(
-        `ERROR: Invalid generation length: ${generateLength}. ` +
-        `Generation length must be a positive number.`);
-      return;
-    }
-
-    // ERROR 3 - Temperature must be positive and between (0,1]
-    if (!(temperature > 0 && temperature <= 1)) {
-      console.log(
-        `ERROR: Invalid temperature: ${temperature}. ` +
-        `Temperature must be a positive number.`);
-      return;
-    }
-
-    let seedSentence;
-    let seedSentenceIndices;
-
-    // ERROR 4 - Invalid Seed Text Length
-    if (seedTextInput.length === 0) {
-      console.log(
-        `ERROR: seed sentence length is zero. Seed Sentence: ` +
-        seedTextInput.value + '.');
-      return;
-    } else {
-      seedSentence = seedTextInput;
-      if (seedSentence.length < sampleLen) {
-        console.log(
-          `ERROR: Seed text must have a length of at least ` +
-          `${sampleLen}, but has a length of ` +
-          `${seedSentence.length}.`);
-        return;
-      }
-      seedSentence = seedSentence.slice(
-        seedSentence.length - sampleLen, seedSentence.length);
-
-      seedSentenceIndices = [];
-      for (let i = 0; i < seedSentence.length; ++i) {
-        seedSentenceIndices.push(
-          charSets[currentModel].indexOf(seedSentence[i]));
-      }
-    }
-
-    console.log("generateLength before calling genText: " + generateLength)
-
-    const sentence = await genText(
-      currentModel, seedSentenceIndices, generateLength, temperature, model, charSet, charSetSize, sampleLen);
+    const sentence = genText(
+      currentModel, seedSentenceIndices, outputLen, temperature, model, charSet, charSetSize, sampleLen);
     generatedTextInput = sentence;
     console.log('Done generating text.');
     return sentence;
@@ -409,152 +365,66 @@ function isBlacklistedWord(word){
 }
 
 
+setupModels();
 
-/**
- * Function to set up the model / start the server / start listening for requests
- */
-async function setUp() {
-  // loads all the models
-  setupModels();
+const app = http.createServer (async function (request, response) {
 
-  // set up the server
-  const app = http.createServer(async function (request, response) {
-    // TO-DO Respond to the favicon.ico request properly if necessary
-    if(request.url == "/favicon.ico")
-      return response.end();
+  // favicon.ico only gets requested when doing the GET req in a browser. ignore
+  if(request.url == "/favicon.ico")
+    return response.end();
 
-    function respond (text) {
-      const respJSON = { generated: text };
-      response.writeHead(200, { 'Content-Type': 'application/json', 'json': 'true' });
-      response.write(JSON.stringify(respJSON));
-      response.end();
-    }
+  function respond (text) {
+    response.writeHead(200, { 'Content-Type': 'application/json', 'json': 'true' });
+    response.write(JSON.stringify({ generated: text }));
+    response.end();
+  }
 
-    // respond to query with generated text
-    let q = url.parse(request.url, true).query;
-
-    // Logs to the console the Data given in the url
-    if(LOG_QUERY_INPUTS){
-      console.log("==== New Request Being Handled!");
-      console.log("  Data From URL:")
-      console.log(q);
-    }
-
-    // Reassigns the global variable which defaults to DEFAULT_OUTPUT_LEN
-    const outputLen = q.outputLength || DEFAULT_OUTPUT_LEN;
-
-    // Assigns a default model
-    let currentModel = DEFAULT_MODEL;
-    if(q.model){
-      if(models[q.model])
-        currentModel = q.model;
-      else
-        console.log(`  Requested model (${q.model}) does not exist.`);
-    }
-    console.log(`  Using the following model: ${currentModel}`);
-
-    // if there is no input text, return an error
-    if (!(q.inputText)) {
-      console.log('There was no input text provided. Throwing error...');
-      return respond("There was no input text provided.");
-    }
-
-    // Handles Tests
-    if (q.inputText == 'test') {
-      console.log('This is a test!');
-      return respond ("The test returned correctly!");
-    }
+  // ---------------------------------------------------------------------------
+  // STEP 1 - Parse the Query Inputs
 
 
-    // Determines if the input is of sufficient length
-    if (q.inputText.length < sampleLen)
-      console.log('inputText is too short. Using previous seed.');
-    else
-      seedTextInput = q.inputText;
+  // Parse the query parameters
+  let q = url.parse(request.url, true).query;
+  console.log("==== New Request Being Handled!\n  Data From URL:")
+  console.log(q);
 
-    if(LOG_SEED)
-      console.log('==== Seed:\n  ' + seedTextInput);
+  // Reassigns the global variable which defaults to DEFAULT_OUTPUT_LEN
+  const outputLen = q.outputLength || DEFAULT_OUTPUT_LEN;
 
-    // This will store the model's generated text
-    let generatedText = '';
-    // Try to Generate the Text using the LSTM
-    try {
-      generatedText = await generateText(
-        currentModel,
-        sampleLen,
-        outputLen,
-        seedTextInput);
-      console.log(generatedText);
-    } catch (err) {
-      console.log(err);
-      return respond ('An error has occured when generating text.');
-    }
+  // Assigns a default model
+  let currentModel = DEFAULT_MODEL;
+  if(q.model && models[q.model])
+    currentModel = q.model;
 
-    // If the model is not trained, don't try to autocorrect it.
-    if(currentModel.slice(-2) == "_0")
-      return respond (generatedText);
+  // if there is no input text, return an error
+  if (!(q.inputText) || q.inputText.length == 0)
+    return respond("There was no input text provided.");
 
-    // Runs a Spell Checker
-    let corpus = generatedText;
+  // Handles Tests
+  if (q.inputText == 'test')
+    return respond("The test returned correctly!");
 
-    console.log(`Sending generatedText to the spell checker`);
+  // Determines if the input is of sufficient length, otherwise uses previous
+  if (q.inputText.length >= sampleLen)
+    seedTextInput = q.inputText;
 
-    try {
-      spellcheck(hunspell, corpus, (error, typos) => {
-        // what to do if there was an error within the spellcheck function
-        if(error)
-          throw error;
-
-        // otherwise we continue and make edits given the typos and suggested corrections
-        if(LOG_TYPOS) {
-          console.log("\n  ==== Let's see some TYPOS ");
-          console.log(typos);
-        }
-
-        if(LOG_TYPO_CORRECTION) {
-          console.log("\n==== The text being spellchecked:");
-          console.log(corpus);
-          console.log("==== END TEXT");
-        }
-
-        // Corrects the typos with the first suggestion
-        for (let i = typos.length - 1; i >= 0; i--) {
-          const pos = typos[i].positions[0];
-          const corrections = typos[i].suggestions;
-          let correctionIndex = 0;
-          for(let j = 0; j < corrections.length; j++, correctionIndex++) {
-            // if found a correction that is not blacklisted, then  use it
-            if(!isBlacklistedWord(corrections[correctionIndex]))
-              break;
-            // if reached the end, then let it be known that there was no suitable correction
-            if(correctionIndex >= corrections.length) {
-              console.log("Found no suitable replacement for the blacklisted correction.");
-              correctionIndex = 0;
-            }
-          }
-          corpus = corpus.slice(0,pos.from) + corrections[correctionIndex] + corpus.slice(pos.to);
-        }
-
-        if(LOG_TYPO_CORRECTION) {
-          console.log("\n==== The text after getting corrected:");
-          console.log(corpus);
-          console.log("==== END TEXT\n");
-        }
-
-        // The responseJSON is made and returned.
-        return respond (corpus);
-      });
-    }
-    catch (err) {
-      console.log(`ERROR: Failed to spell check text: ${err.message}`);
-      return respond ('An error has occured when spell-checking.');
-    }
-  });
-
-  // start listening for requests
-  app.listen(port);
-}
+  // ---------------------------------------------------------------------------
+  // STEP 2 - Generate the Text
 
 
+  // Try to Generate the Text using the LSTM
+  try {
+    let generatedText = await generateText(
+      currentModel,
+      sampleLen,
+      outputLen,
+      seedTextInput);
+    return respond(generatedText);
+  } catch (err) {
+    console.log(err);
+    return respond ('An error has occured when generating text.');
+  }
+});
 
-setUp();
+// start listening for requests
+app.listen(port);
