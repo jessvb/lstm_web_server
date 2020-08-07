@@ -1,24 +1,25 @@
-const tf = require('@tensorflow/tfjs-node');
-const fs = require("fs");
 
+/* ============================= Server Imports ============================= */
+
+const tf = require('@tensorflow/tfjs-node');
 
 // for simple_server:
 const url  = require('url');
 const http = require('http');
-const port = 1234;
+const PORT = 1234;
 
-/* ============================================================= */
-/* ========================== Variables ======================== */
-/* ============================================================= */
+/* ============================ Server Variables ============================ */
 
-const LOG_TEXT_GEN_PROGRESS = true; // Logs the progress of generating text every 20%
-const LOG_TYPOS         = false;    // Logs the typos found in the generated text
-
-// This is the default model given in case there is no model requested by the url
+// Logs the progress of generating text every 20%
+const LOG_TEXT_GEN_PROGRESS = true;
+// The default model given in case no model requested by the url
 const DEFAULT_MODEL = 'narnia_1_20';
 const DEFAULT_OUTPUT_LEN = 40;
-const BLACKLISTED_WORDS = [ "mating", "fuck", "shit", "crap"];
-
+// On range (0,1] temperature of 0 means each char is chosen by max likelihood
+const TEMPERATURE = tf.scalar(0.6);
+let seedTextInput = "This is a seed input. Hopefully it works and we'll get results.";
+// the models hosted on the web server all have sample length of 40
+const SAMPLE_LEN = 40;
 
 // Stores the location of the tfjs model for the model with the given name
 // the names are in the form <DATASET>_<Epochs trained>
@@ -106,8 +107,8 @@ const woOz        = [
 ];
 // Mapping of individual models with their charsets
 const charSets = {
-  // a newly initiated model that has not seen any text, specifically the one prepared
-  // to train on Harry Potter
+  // a newly initiated model that has not seen any text. All <data>_0 models
+  // can effectively share the same charset and model
   new_model: harryPotter,
 
   aliceInWonderland_0: harryPotter,
@@ -162,14 +163,6 @@ const charSets = {
   ],
 };
 
-// Smaller Temperature means less creative and more sensible
-const TEMPERATURE = 0.6;
-let temperatureScalar = tf.scalar(TEMPERATURE);
-// let seedTextInput = 'This is a seed input. Hopefully it works.'; TODO THIS IS LENGTH 40 VS 60 FOR NIET VS HARRYPOTTER
-let seedTextInput = "This is a seed input. Hopefully it works and we'll get results.";
-// the models hosted on the web server all have sample length of 40
-const sampleLen = 40;
-
 
 
 /**
@@ -181,7 +174,7 @@ async function setupModels () {
     let ioHandler = tf.io.fileSystem(__dirname + '/char-based-models/' + modelFileNames[selectedModel]);
     let model = await tf.loadLayersModel (ioHandler);
     models[selectedModel] = model;
-    console.log("    Loaded Model: " + selectedModel)
+    console.log("    Loaded Model: " + selectedModel);
   }
 
   let modelNames = ["aliceInWonderland_", "drSeuss_", "harryPotter_", "nancy_", "narnia_1_"];
@@ -189,26 +182,21 @@ async function setupModels () {
     models[modelNames[i] + "0"] = models["newModel"];
     console.log("    Loaded Model: " + modelNames[i] + "0");
   }
-  console.log("Done loading all registered files.\n")
+  console.log("Done loading all registered files.\n");
 }
 
 
 
-/* ============================================================= */
-/* ============= functions from original utils.js ============= */
-/* ============================================================= */
-
-
 /**
- * Draw a sample based onprobabilities.
+ * Pick an index from the output of a model randomly.
  *
  * @param {tf.Tensor} preds Predicted probabilities, as a 1D `tf.Tensor` of
- *   shape `[this._charSetSize]`.
+ *   shape `[charSetSize]`.
  * @param {tf.Tensor} temperature Temperature (i.e., a measure of randomness
  *   or diversity) to use during sampling. Number be a number > 0, as a Scalar
  *   `tf.Tensor`.
- * @returns {number} The 0-based index for the randomly-drawn sample, in the
- *   range of [0, this._charSetSize - 1].
+ * @returns {number} The 0-based index for the sampled char, in the range of
+ *   [0, this._charSetSize - 1].
  */
 function sample(preds, temperature) {
   return tf.tidy(() => {
@@ -222,52 +210,46 @@ function sample(preds, temperature) {
     // return tf.multinomial(preds, 1, null, true).dataSync()[0];
     // Instead of multinomial, find logits (which are (-inf,inf) instead of [0,1])
     // by doing L = ln(preds/(1-preds))
-    const subbed = tf.sub(1, preds).dataSync();
-    const divved = tf.div(preds, subbed).dataSync();
-    const unnormalized = tf.log(divved).dataSync();
+    const subbed = tf.sub(1, preds);
+    const divved = tf.div(preds, subbed);
+    const unnormalized = tf.log(divved);
     return tf.multinomial(unnormalized, 1, null, false).dataSync()[0];
   });
 }
 
 
 
-/* ============================================================= */
-/* ==== functions from orig LoadableLSTMTextGenerator class ==== */
-/* ============================================================= */
-
-
 /**
  * Generate text using the LSTM model.
  *
- * @param {number[]} sentenceIndices Seed sentence, represented as the
- *   indices of the constituent characters.
- * @param {number} length Length of the text to generate, in number of
- *   characters.
+ * @param {number[]} seed_seq - The input sequence provided as a list of integers representing the chars
+ * @param {number} len_generate - The target number of characters to generate
  * @param {number} temperature Temperature parameter. Must be a number > 0.
  * @returns {string} The generated text.
  */
-async function genText(currentModel, sentenceIndices, length, temperature, model, charSet, charSetSize, sampleLen) {
-
-  generatedTextInput = '';
+async function genText(seed_seq, len_generate, model, charSet, sampleLen) {
+  let num_chars_generated = 0;
   let generated = '';
 
-  while (generated.length < length) {
+  while (generated.length < len_generate) {
+
+    // prints to the console progress generating the text
+    if(LOG_TEXT_GEN_PROGRESS && (++num_chars_generated) % Math.round(len_generate/5) == 0)
+      console.log(`Generating text: ${num_chars_generated}/${len_generate} complete...`);
 
     // creates the one hot vector as input to the model
-    const input = tf.oneHot(sentenceIndices, charSetSize)
-      .reshape([1, sampleLen, charSetSize]);
+    const input = tf.oneHot(seed_seq, charSet.length)
+      .reshape([1, sampleLen, charSet.length]);
 
     // Call model.predict() to get the probability values of the next char
     const output = model.predict(input);
     // Sample randomly based on the probability values.
-    const winnerIndex = sample(tf.squeeze(output), temperatureScalar);
+    const winnerIndex = sample(tf.squeeze(output), TEMPERATURE);
     const winnerChar = charSet[winnerIndex];
-    generatedTextInput += winnerChar;
-    onTextGenerationChar(length);
 
     generated += winnerChar;
-    sentenceIndices = sentenceIndices.slice(1);
-    sentenceIndices.push(winnerIndex);
+    seed_seq = seed_seq.slice(1);
+    seed_seq.push(winnerIndex);
 
     input.dispose();
     output.dispose();
@@ -278,94 +260,11 @@ async function genText(currentModel, sentenceIndices, length, temperature, model
 
 
 
-/**
- * A function to call each time a character is obtained during text generation.
- *
- * @param {number} len The target number of generated characters
- */
-async function onTextGenerationChar(len) {
-  const charCount = generatedTextInput.length;
-
-  if(LOG_TEXT_GEN_PROGRESS && charCount % Math.round(len/5) == 0)
-    console.log(`Generating text: ${charCount}/${len} complete...`);
-}
-
-
-
-/**
- * Use `textGenerator` to generate random text, show the characters in the
- * console as they are generated one by one.
- * @param currentModel, the string name of the current model
- *
- */
-async function generateText(currentModel, sampleLen, outputLen, seedTextInput) {
-
-  // loads the currentModel's preloaded model
-  let model = models[currentModel]
-  // Loads the charset for the currentModel
-  let charSet = charSets[currentModel];
-  // Determines the length of the charset
-  let charSetSize = charSet.length;
-
-
-  // ERROR 1 - No Model
-  if (model == null)
-    return console.log('ERROR: Please load text data set first.');
-
-
-  // ERROR 2 - Improper value for number of chars to generate
-  if (outputLen <= 0)
-    return console.log(
-      `ERROR: Invalid generation length: ${outputLen}. ` +
-      `Generation length must be a positive number.`);
-
-
-  // ERROR 3 - Invalid Seed Text Length
-  if (seedTextInput.length < sampleLen) {
-    return console.log(
-      `ERROR: Seed text must have a length of at least ` +
-      `${sampleLen}, but has a length of ` +
-      `${seedTextInput.length}.`);
-  }
-
-
-  // 1. Select the last n-chars of the seed text, where n is the sample length
-  let seedSentence = seedTextInput;
-  seedSentence = seedSentence.slice(
-    seedSentence.length - sampleLen, seedSentence.length);
-
-  // 2. Converts the last n-chars into a list of n integers
-  let seedSentenceIndices = [];
-  for (let i = 0; i < seedSentence.length; ++i) {
-    seedSentenceIndices.push(
-      charSets[currentModel].indexOf(seedSentence[i]));
-  }
-
-  // 3. Attempt to generate the text
-  try {
-    const sentence = genText(
-      currentModel, seedSentenceIndices, outputLen, temperature, model, charSet, charSetSize, sampleLen);
-    generatedTextInput = sentence;
-    console.log('Done generating text.');
-    return sentence;
-  } catch (err) {
-    console.log(`ERROR: Failed to generate text: ${err.message}, ${err.stack}`);
-  }
-}
-
-
-
-/**
- * Returns true if the provided word is in the list of blacklisted words
- * false otherwise
- */
-function isBlacklistedWord(word){
-  word = word.toLowerCase();
-  return BLACKLISTED_WORDS.indexOf(word) != -1;
-}
+/* ============================ Start the Server ============================ */
 
 
 setupModels();
+
 
 const app = http.createServer (async function (request, response) {
 
@@ -374,10 +273,12 @@ const app = http.createServer (async function (request, response) {
     return response.end();
 
   function respond (text) {
+    console.log("Response:", text);
     response.writeHead(200, { 'Content-Type': 'application/json', 'json': 'true' });
     response.write(JSON.stringify({ generated: text }));
     response.end();
   }
+
 
   // ---------------------------------------------------------------------------
   // STEP 1 - Parse the Query Inputs
@@ -392,9 +293,7 @@ const app = http.createServer (async function (request, response) {
   const outputLen = q.outputLength || DEFAULT_OUTPUT_LEN;
 
   // Assigns a default model
-  let currentModel = DEFAULT_MODEL;
-  if(q.model && models[q.model])
-    currentModel = q.model;
+  let currentModelName = q.model ? q.model : DEFAULT_MODEL;
 
   // if there is no input text, return an error
   if (!(q.inputText) || q.inputText.length == 0)
@@ -405,26 +304,64 @@ const app = http.createServer (async function (request, response) {
     return respond("The test returned correctly!");
 
   // Determines if the input is of sufficient length, otherwise uses previous
-  if (q.inputText.length >= sampleLen)
+  if (q.inputText.length >= SAMPLE_LEN)
     seedTextInput = q.inputText;
 
+
   // ---------------------------------------------------------------------------
-  // STEP 2 - Generate the Text
+  // STEP 2 - Check for Inappropriate Parameters
+
+
+  // Error 1 - No Model
+  if (!models[currentModelName])
+    return respond(`ERROR: LSTM model "${currentModelName}" doesn't exist`);
+
+  // Error 2 - Invalid number of chars requested to generate
+  if (outputLen <= 0)
+    return respond(`ERROR: Invalid generation length: ${outputLen}. ` +
+      `Generation length must be a positive number.`);
+
+  // Error 3 - The input sequence is too short to run the model
+  if (seedTextInput.length < SAMPLE_LEN)
+    return respond(`ERROR: Seed text must have a length of at least ` +
+      `${SAMPLE_LEN}, but has a length of ${seedTextInput.length}.`);
+
+
+  // ---------------------------------------------------------------------------
+  // Step 3 - Some Pre-Processing of the inputs for the model
+
+
+  // loads the preloaded model with the current name
+  let model = models[currentModelName]
+  // Loads the charset for the currentModel
+  let charSet = charSets[currentModelName];
+
+  // Select the last n-chars of the seed text, where n is the sample length
+  let seedSentence = seedTextInput;
+  seedSentence = seedSentence.slice(
+    seedSentence.length - SAMPLE_LEN, seedSentence.length);
+
+  // Converts the last n-chars into a list of n integers
+  let seedSentenceIndices = new Array(seedSentence.length);
+  for (let i = 0; i < seedSentence.length; i++)
+    seedSentenceIndices[i] = charSet.indexOf(seedSentence[i]);
+
+
+  // ---------------------------------------------------------------------------
+  // STEP 4 - Generate the Text
 
 
   // Try to Generate the Text using the LSTM
   try {
-    let generatedText = await generateText(
-      currentModel,
-      sampleLen,
-      outputLen,
-      seedTextInput);
+    let generatedText = await genText(
+      seedSentenceIndices, outputLen, model, charSet, SAMPLE_LEN);
     return respond(generatedText);
-  } catch (err) {
+  }
+  catch (err) {
     console.log(err);
-    return respond ('An error has occured when generating text.');
+    return respond ('An error occured when generating text.');
   }
 });
 
 // start listening for requests
-app.listen(port);
+app.listen(PORT);
