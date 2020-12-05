@@ -17,10 +17,10 @@ const port = 1234;
 /* ========================== Variables ======================== */
 /* ============================================================= */
 
-const LOG_QUERY_INPUTS  = true;     // Logs all of the query stuff
-const LOG_SEED          = true;     // Logs the seed that is being used
-const LOG_TEXT_GEN_PROGRESS = true; // Logs the progress of generating text every 20%
-const LOG_TYPO_CORRECTION   = true; // Logs the generated text before and after beign corrected for typos
+const LOG_QUERY_INPUTS  = false;     // Logs all of the query stuff
+const LOG_SEED          = false;     // Logs the seed that is being used
+const LOG_TEXT_GEN_PROGRESS = false; // Logs the progress of generating text every 20%
+const LOG_TYPO_CORRECTION   = false; // Logs the generated text before and after beign corrected for typos
 const LOG_TYPOS         = false;    // Logs the typos found in the generated text
 
 // This is the default model given in case there is no model requested by the url
