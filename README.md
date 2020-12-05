@@ -4,11 +4,13 @@ This project shows how to host a handful of pre-trained text generating models o
 
 ### Example URL
 
-`<path-to-server>:1234/?inputText=hello%20there%20how%20are%20you%20today%20because%20I%20am%20doing%20pretty%20well&model=drSeuss_20&outputLength=10`
-
 To simply test if the server is online and responding properly, the server checks to see if `inputText='test'`. If it does, it will return "The test returned correctly" for all of the node servers.
 
-`path-to-the-node-server:1234/?inputText=test&model=narnia_100`
+`<path-to-server>:1234/?inputText=test&model=narnia_100`
+
+An example of having it use the models to generate text can be found below.
+
+`<path-to-server>:1234/?inputText=hello%20there%20how%20are%20you%20today%20because%20I%20am%20well&model=drSeuss_20&outputLength=20`
 
 ## Running the Node Server
 
